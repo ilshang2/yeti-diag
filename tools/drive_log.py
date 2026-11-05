@@ -27,6 +27,7 @@ from yeti_diag.vehicle import UDS_MODULES  # noqa: E402
 # TP2.0 groups sampled less often: 03 ABS steering/accel/brake/wheels; 02 clutch & gear.
 TP20_GROUPS = {"03": [1, 4, 5, 6], "02": [8, 70, 75, 98, 118]}
 ES = 0x80000000 | 0x1 | 0x2
+ENGINE_OFF_SAMPLES = 3  # consecutive 0 rpm / no-answer samples that end the drive
 
 
 def keep_awake():
@@ -52,7 +53,9 @@ def read_obd(t, record):
     record({"kind": "obd", "values": got})
     rpm = next((v["value"] for k, v in got.items() if "轉速" in v.get("name", "")), None)
     kmh = next((v["value"] for k, v in got.items() if "車速" in v.get("name", "")), None)
-    return f"轉速 {rpm} rpm、車速 {kmh} km/h" if got.get("_error") is None and got else "引擎無回應"
+    if got.get("_error") is None and got:
+        return f"轉速 {rpm} rpm、車速 {kmh} km/h", rpm
+    return "引擎無回應", None
 
 
 def read_tp20(base, t, record):
@@ -120,6 +123,7 @@ def main():
         health(t, record, "出發前")
         end = time.time() + a.seconds
         last_tp20 = 0.0
+        stopped = 0
         try:
             while time.time() < end:
                 if stop_file.exists():
@@ -127,7 +131,14 @@ def main():
                     log("收到停止檔，結束行駛記錄")
                     break
                 keep_awake()
-                log("  " + read_obd(t, record))
+                text, rpm = read_obd(t, record)
+                log("  " + text)
+                # Engine off (0 rpm) or ignition off (no answer) for a few samples in a row:
+                # the drive is over. Before this the logger hung after parking (2026-11-06).
+                stopped = 0 if rpm else stopped + 1
+                if stopped >= ENGINE_OFF_SAMPLES:
+                    log("引擎已熄火，結束行駛記錄")
+                    break
                 if a.tp20_every > 0 and time.time() - last_tp20 >= a.tp20_every:
                     read_tp20(base, t, record)
                     last_tp20 = time.time()
