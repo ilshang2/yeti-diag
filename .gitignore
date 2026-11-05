@@ -1,0 +1,15 @@
+# Run output: reports hold the phone bug report (personal data) and car scans
+reports/
+# Backups of car values before writes, and write plans: per-car runtime data
+backups/
+plans/
+
+# Installed packages (reinstall from requirements.txt), caches
+.deps/
+__pycache__/
+.pytest_cache/
+
+dist/
+build/
+*.spec
+tools/__pycache__/

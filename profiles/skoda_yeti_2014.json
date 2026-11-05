@@ -1,0 +1,319 @@
+{
+  "profile": "skoda_yeti_2014",
+  "name": "Skoda Yeti 1.2 TSI 2014",
+  "vin": "TMBJF65L0E6000000",
+  "source": "VCDS Auto-Scan 2026-11-03; CAN IDs, TP2.0 addresses and values confirmed on the car with yeti_diag",
+  "diag_bitrate": 500000,
+  "uds_modules": {
+    "01": {
+      "name": "引擎",
+      "part_no": "03F 906 070 JJ",
+      "tx_id": "7E0",
+      "rx_id": "7E8"
+    },
+    "08": {
+      "name": "冷氣 (手動)",
+      "part_no": "3T0 820 047 AK",
+      "tx_id": "746",
+      "rx_id": "7B0"
+    },
+    "15": {
+      "name": "安全氣囊",
+      "part_no": "5C0 959 655 C",
+      "tx_id": "715",
+      "rx_id": "77F"
+    },
+    "16": {
+      "name": "方向盤模組",
+      "part_no": "5K0 953 521 CS",
+      "tx_id": "70C",
+      "rx_id": "776"
+    },
+    "17": {
+      "name": "儀表",
+      "part_no": "5L0 920 800 L",
+      "tx_id": "714",
+      "rx_id": "77E"
+    }
+  },
+  "tp20_modules": {
+    "02": {
+      "name": "變速箱 (DSG)",
+      "part_no": "0AM300065K"
+    },
+    "03": {
+      "name": "ABS/ESP",
+      "part_no": "1K0907379BM"
+    },
+    "09": {
+      "name": "中央電子",
+      "part_no": "1K0937086AA"
+    },
+    "19": {
+      "name": "閘道器",
+      "part_no": "7N0907530AK"
+    },
+    "25": {
+      "name": "防盜"
+    },
+    "42": {
+      "name": "駕駛座車門",
+      "part_no": "7N0959793F"
+    },
+    "44": {
+      "name": "電子轉向輔助",
+      "part_no": "1K0909144R"
+    },
+    "46": {
+      "name": "舒適模組"
+    },
+    "52": {
+      "name": "副駕車門",
+      "part_no": "7N0959792F"
+    },
+    "62": {
+      "name": "左後門",
+      "part_no": "7N0959795E"
+    },
+    "72": {
+      "name": "右後門",
+      "part_no": "7N0959795E"
+    }
+  },
+  "rear_door_dest": {
+    "62": "24",
+    "72": "25",
+    "_checked": "2026-11-03: only the left rear door open, 0x24 group 001 byte 3 went 00 -> 40, 0x25 unchanged (tools/door_blocks.py)"
+  },
+  "uds_values": {
+    "_note": "module -> DID -> value = unsigned big-endian raw x scale + offset. Engine values matched 2026-11-04 with Car Scanner screenshots and the phone's Bluetooth log at the same time.",
+    "01": {
+      "155A": {
+        "name": "引擎扭力",
+        "unit": "N·m",
+        "scale": 0.03125,
+        "checked": "2026-11-04 0D05 = 3333 → 104.16 (紅火)、02E6 = 742 → 23.19 (怠速)，與 Car Scanner Engine torque 相同"
+      },
+      "2006": {
+        "name": "機油油位",
+        "unit": "mm",
+        "scale": 0.06,
+        "checked": "2026-11-04 0576 → 83.88 (紅火)、049A → 70.68、0497 → 70.5 (怠速)，與 Car Scanner Oil fill level 相同；常交替讀到 0780 = 115.2 mm (07:22 畫面也顯示 115.2)，可能是未量測時的值"
+      },
+      "2029": {
+        "name": "增壓壓力 指定值",
+        "unit": "hPa",
+        "scale": 0.08,
+        "checked": "2026-11-04 337F → 1054.64、2D19 附近 → 923.6、1550 → 436.48，與 Car Scanner Charge air pressure: specified 相同"
+      },
+      "202A": {
+        "name": "增壓壓力 實際值",
+        "unit": "hPa",
+        "scale": 0.08,
+        "checked": "2026-11-04 2F6B = 12139 → 971.12 (怠速)、32A0 附近 → 1035.04，與 Car Scanner Charge air pressure: actual 相同"
+      },
+      "20A1": {
+        "name": "計算機油溫度",
+        "unit": "°C",
+        "offset": -40,
+        "checked": "2026-11-04 42/43/46 → 26/27/30 °C，與 Car Scanner Calculated oil temperature 相同"
+      },
+      "2206": {
+        "name": "油箱油量",
+        "unit": "L",
+        "checked": "2026-11-04 06 → 6 L (07:05-07:22)、05 → 5 L (07:30)，與 Car Scanner Fuel level 相同；08:5x 加油 51.9 L 後讀到 35 → 53 L (加油前讀 3 L)，滿油端也合理"
+      },
+      "15AA": {
+        "name": "目前檔位 (變速箱回報給引擎)",
+        "unit": "",
+        "checked": "2026-11-04 停車時 00 → 0、07:30 行駛中 07 → 7，與 Car Scanner Selected gear 相同 (只有兩個點)"
+      }
+    },
+    "17": {
+      "2203": {
+        "name": "總里程",
+        "unit": "km",
+        "scale": 10,
+        "checked": "2026-11-03 讀到 77B7 = 30647 → 306470 km，儀表板 306479 km (單位 10 km)"
+      }
+    }
+  },
+  "reference": {
+    "_note": "VCDS results of 2026-11-03, used by `verify`",
+    "09_coding": "6E000AB8A80508E4401000C01100816C4F0000AE525D8960E48040000040",
+    "door_dtc": 2115,
+    "72_coding": "010001200000531003",
+    "door_counts": {
+      "62": 102,
+      "72": 66
+    }
+  },
+  "candidates": {
+    "_note": "Not confirmed yet: what Car Scanner read on this car (Bluetooth log 2026-11-03). `candidates` reads them raw so they can be matched with what Car Scanner shows.",
+    "uds_dids": {
+      "01": [
+        "1189",
+        "118A",
+        "118B",
+        "118C",
+        "118D",
+        "118E",
+        "118F",
+        "1213",
+        "1314",
+        "173A",
+        "2005",
+        "200A",
+        "200B",
+        "200C",
+        "200D"
+      ],
+      "17": [
+        "2200",
+        "2245",
+        "2246",
+        "2247",
+        "2265",
+        "2266",
+        "226E",
+        "226F",
+        "2293",
+        "229D",
+        "22A4",
+        "22A5",
+        "22D5",
+        "22D6"
+      ]
+    },
+    "tp20_groups": {
+      "02": [
+        "06",
+        "0B",
+        "10",
+        "13",
+        "62",
+        "63",
+        "66",
+        "6D",
+        "76",
+        "77",
+        "7A",
+        "B4",
+        "C8"
+      ]
+    }
+  },
+  "group_labels": {
+    "_note": "module -> measuring group (decimal, like VCDS) -> value position (1-based) -> name. Each from this car's readings matched with another tool's screen; 'checked' says how.",
+    "02": {
+      "8": {
+        "1": {
+          "name": "車速",
+          "checked": "2026-11-04 行駛中 12 輪交替讀：07 64 57 = 87 km/h，前後引擎 OBD 車速 87-88 km/h，每輪都落在範圍內"
+        },
+        "2": {
+          "name": "車速 (第二來源，常比第 1 值低 0-1 km/h，來源待確認)",
+          "checked": "2026-11-04 行駛中與 OBD 車速差 0-2 km/h"
+        }
+      },
+      "11": {
+        "1": {
+          "name": "變速箱油溫 (與第 2 值的先後順序是推定)",
+          "checked": "2026-11-04 9F 04 80 = 26 °C，Car Scanner Fluid Temperature 26 °C；兩值當時相同，無法分辨哪個是哪個"
+        },
+        "2": {
+          "name": "控制單元溫度 (與第 1 值的先後順序是推定)",
+          "checked": "2026-11-04 9F 04 80 = 26 °C，Car Scanner Control Unit Temperature 26 °C"
+        }
+      },
+      "28": {
+        "1": {
+          "name": "車輛總里程 (與儀表相符)",
+          "checked": "2026-11-04 24 = 306540 km；17 儀表 15:3x 讀 306520 km，之後約開 20 km"
+        }
+      },
+      "98": {
+        "4": {
+          "name": "離合器 1 曾達最高溫度",
+          "checked": "2026-11-04 9F 7A 8C = 345 °C = Car Scanner Clutch 1 Max Reached Temperature 345 ℃"
+        }
+      },
+      "99": {
+        "1": {
+          "name": "離合器 1 工作時間 100 °C 以下",
+          "checked": "2026-11-04 59 19 11；Car Scanner 不會解 0x59，直接顯示 89025017 (= 59 19 11 的十進位拼接)"
+        },
+        "2": {
+          "name": "離合器 1 工作時間 101-150 °C",
+          "checked": "2026-11-04 59 11 47；Car Scanner 顯示 89017071 (同上，未解碼)"
+        },
+        "3": {
+          "name": "離合器 1 工作時間 151-200 °C",
+          "checked": "2026-11-04 2C 54 31 = 5089 min = Car Scanner 5089 min"
+        },
+        "4": {
+          "name": "離合器 1 工作時間 201-250 °C",
+          "checked": "2026-11-04 2C 00 1F = 31 min = Car Scanner 31 min"
+        }
+      },
+      "102": {
+        "1": {
+          "name": "離合器 1 工作時間 251-300 °C",
+          "checked": "2026-11-04 37 C8 00 = 0 s = Car Scanner 0 sec"
+        },
+        "2": {
+          "name": "離合器 1 工作時間 301-350 °C",
+          "checked": "2026-11-04 37 C8 00 = 0 s = Car Scanner 0 sec"
+        },
+        "3": {
+          "name": "離合器 1 工作時間 350 °C 以上",
+          "checked": "2026-11-04 37 C8 00 = 0 s = Car Scanner 0 sec"
+        }
+      },
+      "109": {
+        "1": {
+          "name": "變速箱記錄的里程",
+          "checked": "2026-11-03 24 78 5B = 308110 km，Car Scanner 同時顯示 308110 km (儀表 306479 km)"
+        }
+      },
+      "118": {
+        "4": {
+          "name": "離合器 2 曾達最高溫度",
+          "checked": "2026-11-04 9F 9E 90 = 451 °C = Car Scanner Clutch 2 Max Reached Temperature 451 ℃"
+        }
+      },
+      "119": {
+        "1": {
+          "name": "離合器 2 工作時間 100 °C 以下",
+          "checked": "2026-11-04 59 18 73；Car Scanner 顯示 89024115 (未解碼的拼接)"
+        },
+        "2": {
+          "name": "離合器 2 工作時間 101-150 °C",
+          "checked": "2026-11-04 59 11 E2；Car Scanner 顯示 89017226 (未解碼的拼接)"
+        },
+        "3": {
+          "name": "離合器 2 工作時間 151-200 °C",
+          "checked": "2026-11-04 2C 58 21 = 5313 min = Car Scanner 5313 min"
+        },
+        "4": {
+          "name": "離合器 2 工作時間 201-250 °C",
+          "checked": "2026-11-04 2C 00 20 = 32 min = Car Scanner 32 min"
+        }
+      },
+      "122": {
+        "1": {
+          "name": "離合器 2 工作時間 251-300 °C",
+          "checked": "2026-11-03 37 C8 CE = 206 s = Car Scanner 206 sec；2026-11-04 截圖確認區間名稱"
+        },
+        "2": {
+          "name": "離合器 2 工作時間 301-350 °C",
+          "checked": "2026-11-03 37 C8 82 = 130 s = Car Scanner 130 sec"
+        },
+        "3": {
+          "name": "離合器 2 工作時間 350 °C 以上",
+          "checked": "2026-11-03 37 C8 5A = 90 s = Car Scanner 90 sec"
+        }
+      }
+    }
+  }
+}

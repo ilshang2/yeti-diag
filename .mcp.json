@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "yeti-diag": {
+      "command": "py",
+      "args": ["-3.13", "-m", "yeti_diag.mcp_server", "--elm", "auto"],
+      "env": {"PYTHONPATH": ".deps;.", "PYTHONIOENCODING": "utf-8"}
+    }
+  }
+}
