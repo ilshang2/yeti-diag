@@ -129,5 +129,4 @@ read-only `.\yeti.ps1 --elm COM5 discover` to generate a profile, then set `YETI
 $env:PYTHONPATH = ".deps;."; py -3.13 -m pytest tests -q -n auto   # all on the simulator, no car needed
 ```
 
-Build the exe yourself: `py -3.13 -m pip install pyinstaller`, then
-`py -3.13 -m PyInstaller --onefile --noconsole --name YetiDiag --paths .deps --paths . --add-data "profiles;profiles" --collect-submodules yeti_diag --hidden-import serial --hidden-import serial.tools.list_ports tools\gui.py`.
+Build the exe yourself: `py -3.13 -m pip install pyinstaller`, then `py -3.13 tools\build_exe.py` (about 9.5 MB, written to `dist\`).

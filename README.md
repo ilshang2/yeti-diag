@@ -122,5 +122,4 @@ py -3.13 tools\drive_log.py --elm COM5   # 行駛記錄 (只讀引擎，熄火�
 $env:PYTHONPATH = ".deps;."; py -3.13 -m pytest tests -q -n auto   # 全部在模擬器上跑，不需接車
 ```
 
-自己打包 exe：`py -3.13 -m pip install pyinstaller`，再
-`py -3.13 -m PyInstaller --onefile --noconsole --name YetiDiag --paths .deps --paths . --add-data "profiles;profiles" --collect-submodules yeti_diag --hidden-import serial --hidden-import serial.tools.list_ports tools\gui.py`。
+自己打包 exe：`py -3.13 -m pip install pyinstaller`，再 `py -3.13 tools\build_exe.py` (約 9.5 MB，輸出到 `dist\`)。

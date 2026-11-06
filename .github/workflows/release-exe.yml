@@ -1,0 +1,43 @@
+# Build YetiDiag.exe on GitHub and attach it to the release when one is published.
+# Runs the whole test suite first; a failing test means no exe. Can also be started by hand
+# (Actions → build-exe → Run workflow): the exe is then kept as a downloadable artifact.
+name: build-exe
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install packages
+        run: |
+          python -m pip install -r requirements.txt --target .deps
+          python -m pip install pyinstaller
+      - name: Tests (simulator)
+        env:
+          PYTHONPATH: ".deps;."
+          PYTHONIOENCODING: utf-8
+        run: python -m pytest tests -q -n auto
+      - name: Build exe
+        run: python tools/build_exe.py --out dist
+      - name: SHA256
+        run: (Get-FileHash dist/YetiDiag.exe -Algorithm SHA256).Hash | Tee-Object dist/YetiDiag.exe.sha256.txt
+      - name: Attach to the release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name }}" dist/YetiDiag.exe dist/YetiDiag.exe.sha256.txt --clobber
+      - uses: actions/upload-artifact@v4
+        with:
+          name: YetiDiag
+          path: dist/
