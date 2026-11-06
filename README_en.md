@@ -20,6 +20,16 @@ V-LINK (v2.1). Cars on the same platform (Octavia II, Golf 5/6, Superb II…) ma
 | **A command line** | See [Install](#install-windows) and [Command line](#command-line) |
 | **No car at hand** | Pick "SIM" as the adapter in the GUI, or add `--sim` to any command: a built-in simulator answers |
 
+## Screenshots
+
+| Live dashboard (safe while driving) | Health: misfire per cylinder |
+|---|---|
+| ![Live dashboard](docs/1_live.png) | ![Misfire](docs/2_health.png) |
+| **Whole-car scan: fault codes, old and new modules** | **09 hidden features** |
+| ![Whole-car scan](docs/3_scan.png) | ![Hidden features](docs/4_features.png) |
+
+<sub>Taken on the built-in simulator (sample VIN); the program's labels are in Chinese.</sub>
+
 > ## ⚠️ Use at your own risk
 >
 > - This tool talks to your car's control modules. A wrong **write** can disable a function, set fault
