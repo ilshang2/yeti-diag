@@ -23,7 +23,7 @@ import sys
 import time
 import traceback
 
-from . import battery, discover, features, labels, measure, plans, sniff, tp20, uds, vehicle, writer
+from . import battery, discover, features, labels, lbl, measure, plans, sniff, tp20, uds, vehicle, writer
 from .elm327 import Elm327, ElmChannel, ElmError, find_port
 from .sim import FakeElmSerial, SimCar
 from .vehicle import (DIAG_BITRATE, ID_DIDS, REAR_DOOR_DEST, TP20_MODULES, TP20_PART_NUMBERS,
@@ -677,11 +677,12 @@ def cmd_discover(args):
         for dest, part in sorted(found.items()):
             say(f"TP2.0 {dest}: {part}")
         adapter = t.elm.version.strip() if t.elm else args.interface
-    profile = discover.build_profile(key, args.title or key, rows, found, adapter=adapter)
+    profile = discover.build_profile(key, args.title or key, rows, found, adapter=adapter,
+                                     keep_vin=args.keep_vin)
     out.write_text(json.dumps(profile, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     problems = vehicle.check_profile(profile)
     say(f"\nUDS 模組 {len(profile['uds_modules'])} 個，TP2.0 模組 {len(profile['tp20_modules'])} 個，"
-        f"車身號碼 {profile['vin'] or '讀不到'}")
+        f"車身號碼 {profile['vin'] or '讀不到'}" + ("" if args.keep_vin else " (後 6 碼已遮蔽，可以直接分享)"))
     say(f"已寫入 {out}")
     say(f"使用: 設定 YETI_DIAG_PROFILE={out.stem}，再跑 profile、tp20-probe、autoscan")
     for msg in problems:
@@ -1029,17 +1030,37 @@ def group_labels(module, group):
     return vehicle.PROFILE.get("group_labels", {}).get(module, {}).get(str(group), {})
 
 
+def label_folder(args):
+    """--labels, else <data>/labels if the user made one; None when neither."""
+    if getattr(args, "labels", None):
+        return pathlib.Path(args.labels)
+    default = DATA_ROOT / "labels"
+    return default if default.is_dir() else None
+
+
+def file_labels(args, module):
+    """Names from the user's own label files for a TP2.0 module, by its part number."""
+    folder = label_folder(args)
+    part = vehicle.TP20_PART_NUMBERS.get(module)
+    if folder is None or not part:
+        return {}
+    found, note = lbl.load(folder, part)
+    say(f"標籤檔: {note}")
+    return found
+
+
 def cmd_measure(args):
     """KWP measuring groups (VCDS 'Measuring Blocks') of a TP2.0 module."""
     dest = tp20_dest(args)
     groups = []
+    from_files = file_labels(args, args.module)
     with Transport(args) as t:
         for _ in range(args.repeat):
             for g in args.groups:
                 row = {"group": g, "time": datetime.datetime.now().isoformat(timespec="milliseconds")}
                 try:
                     row["values"] = measure.label(kwp_call(t, dest, lambda k: measure.read_group(k, g)),
-                                                  group_labels(args.module, g))
+                                                  lbl.merge(group_labels(args.module, g), from_files.get(g)))
                     say(f"{args.module} 群組 {g:03d}: " + " | ".join(measure.value_text(v) for v in row["values"]))
                 except uds.NegativeResponse as e:
                     row["error"] = f"不支援 ({e.nrc:02X})"
@@ -1385,6 +1406,8 @@ def build_parser():
                    help="stdout 只輸出一份 JSON (給 AI/程式讀)，過程訊息改到 stderr")
     p.add_argument("--plan", action="store_true", help="寫入指令只產生計畫，不寫入 (之後用 apply 執行)")
     p.add_argument("--yes", action="store_true", help="寫入時不再詢問 (其他安全檢查仍會執行)")
+    p.add_argument("--labels", metavar="DIR",
+                   help="自己的 VCDS 格式純文字標籤檔 (.lbl) 資料夾，給測量群組加名稱 (預設 <資料夾>/labels；.clb 加密檔不支援)")
     p.add_argument("--allow-moving", action="store_true",
                    help="不檢查車速 (預設行駛中拒絕連舊模組與寫入；只給台架 / 頂車測試用)")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -1441,6 +1464,8 @@ def build_parser():
     s = sub.add_parser("discover", help="別台車：掃描車上所有模組 (只讀)，自動產生車型設定檔")
     s.add_argument("--name", required=True, help="設定檔名稱 (英數字、底線)，例如 golf6_2010")
     s.add_argument("--title", help="顯示用的車名，例如 'VW Golf 6 1.4 TSI 2010'")
+    s.add_argument("--keep-vin", action="store_true",
+                   help="保留完整車身號碼 (預設遮蔽後 6 碼，設定檔可以直接分享)")
     s.set_defaults(fn=cmd_discover)
     sub.add_parser("values", help="讀已在實車確認的數值 (總里程等)").set_defaults(fn=cmd_values)
     s = sub.add_parser("sniff", help="只聽不發：錄下其他診斷軟體 (VCDS + Y 接線) 的封包並存檔")

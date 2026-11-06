@@ -66,10 +66,17 @@ VERIFIED = {
 
 
 def label(values, labels):
-    """Attach names from a profile's group_labels entry ({"1": {"name": ...}}) to values."""
+    """Attach names ({"1": {"name": ..., "source": ..., "detail": ...}}) to values. The
+    profile's names were checked on a car; "label file" names come from the user's own
+    VCDS-style label files (see lbl.py) and keep that source so nobody takes them as checked."""
     for i, v in enumerate(values, 1):
-        if str(i) in (labels or {}):
-            v["name"] = labels[str(i)]["name"]
+        entry = (labels or {}).get(str(i))
+        if entry:
+            v["name"] = entry["name"]
+            if entry.get("source") == "label file":
+                v["name_source"] = "label file"
+                if entry.get("detail"):
+                    v["name_detail"] = entry["detail"]
     return values
 
 

@@ -45,8 +45,15 @@ def test_unknown_ids_get_placeholder_addresses():
     rows = [{"tx": 0x7E0, "rx": 0x7E8, "part": "04E906016A", "vin": "WVWZZZ1KZAW000001"},
             {"tx": 0x7AB, "rx": 0x815, "part": "5Q0123456", "F197": "J999 Test"}]
     p = discover.build_profile("x", "X", rows, {"0x2A": "1K0000000A", "0x02": "(讀不到零件號碼)"})
-    assert p["vin"] == "WVWZZZ1KZAW000001"
+    assert p["vin"] == "WVWZZZ1KZAW000000"  # serial masked by default: profiles get shared
+    assert discover.build_profile("x", "X", rows, {}, keep_vin=True)["vin"] == "WVWZZZ1KZAW000001"
     assert p["uds_modules"]["UDS_7AB"] == {"name": "J999 Test", "part_no": "5Q0123456", "tx_id": "7AB",
                                            "rx_id": "815", "system_name": "J999 Test"}
     assert p["tp20_modules"]["TP20_2A"]["part_no"] == "1K0000000A"
     assert "part_no" not in p["tp20_modules"]["02"]
+
+
+def test_mask_vin_keeps_car_type_drops_serial():
+    assert discover.mask_vin("TMBJF65L8E6123456") == "TMBJF65L8E6000000"
+    assert discover.mask_vin("") == ""
+    assert discover.mask_vin("SHORT") == "SHORT"  # not a VIN: leave it alone

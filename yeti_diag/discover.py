@@ -58,9 +58,20 @@ def scan_uds(client_for, ids=None, say=print):
     return rows
 
 
-def build_profile(key, title, uds_rows, tp20_found, adapter=""):
-    """Profile dict (same format as profiles/skoda_yeti_2014.json) from the scan results."""
+def mask_vin(vin):
+    """Keep the first 11 characters (maker, model, model year, plant: what identifies the car
+    type) and zero the last 6 (the serial: what identifies one car), so a profile can be
+    shared without giving away the owner's car."""
+    vin = (vin or "").strip()
+    return vin[:11] + "0" * (len(vin) - 11) if len(vin) == 17 else vin
+
+
+def build_profile(key, title, uds_rows, tp20_found, adapter="", keep_vin=False):
+    """Profile dict (same format as profiles/skoda_yeti_2014.json) from the scan results.
+    The VIN's serial is masked unless keep_vin: profiles are meant to be shared."""
     vin = next((r["vin"] for r in uds_rows if r.get("vin")), "")
+    if not keep_vin:
+        vin = mask_vin(vin)
     uds_modules, used = {}, set()
     for r in uds_rows:
         addr, name = COMMON_UDS.get(r["tx"], (f"UDS_{r['tx']:03X}", ""))

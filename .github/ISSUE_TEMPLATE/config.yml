@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 怎麼參與 / How to contribute
+    url: https://github.com/ilshang2/yeti-diag/blob/main/CONTRIBUTING.md
+    about: 新增車款、標籤檔、回報方式 / Adding cars, label files, reporting

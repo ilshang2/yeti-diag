@@ -125,13 +125,22 @@ car standing still → show old/new and ask → **send once** (no automatic retr
 ## Other cars
 
 Modules, CAN IDs and part numbers live in `profiles\skoda_yeti_2014.json`. For another car, run the
-read-only `.\yeti.ps1 --elm COM5 discover` to generate a profile, then set `YETI_DIAG_PROFILE=<name>`.
+read-only `.\yeti.ps1 --elm COM5 discover --name your_car` to generate a profile (VIN serial masked, safe to share),
+then set `YETI_DIAG_PROFILE=your_car`.
 
-## Help test
+Measuring-group names: if you own plain-text VCDS-style label files (`.lbl`), add `--labels <folder>`
+(encrypted `.clb` files are not supported; no label files ship with the tool).
+
+## Contribute: report your car
+
+How many cars this supports depends on owners reporting theirs, one car each (like Renault's [ddt4all](https://github.com/cedricp/ddt4all)). No coding needed:
 
 1. Start with reads only: the first three GUI tabs, or `voltage`, `autoscan`, `misfire`, `readiness`.
-2. Open an [issue](https://github.com/ilshang2/yeti-diag/issues): car / year / engine, adapter, which feature, and whether the result matches VCDS / Car Scanner.
-3. **Remove your VIN (17 characters)** before posting: files in `reports\` contain the VIN read from the car.
+2. Open a [car report](https://github.com/ilshang2/yeti-diag/issues/new?template=car_report.yml). **Success or failure, both help — failures most.**
+3. Not a 2014 Yeti? Attach the profile `discover` made.
+4. **Remove your VIN (17 characters)** from anything you paste: files in `reports\` contain the VIN read from the car.
+
+Details (profiles, label files, code): [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Developers
 

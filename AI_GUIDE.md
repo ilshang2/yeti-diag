@@ -76,6 +76,12 @@ Claude Code 預設每次呼叫 MCP 工具都會問人；**不要把 `apply` 設�
 | `battery` | `--crank 秒數` (選填，最多 120) | 電瓶：`snapshot` (接頭 / 引擎 / 閘道器電壓、rpm)；熄火時 `rest.soc` 估計電量，運轉時 `charging.ok`；`--crank` 要先熄火、點火 ON，開始後請使用者轉鑰匙，回 `crank.min` / `grade` (good / weak / replace) |
 | `verify` | — | 跟 2026-11-03 的 VCDS 結果比對 18 項 (工具自我檢查) |
 
+### 測量群組的名稱來源
+
+`measure` 的值有 `name` 時看來源：沒有 `name_source` = 設定檔裡**實車確認過**的名稱；
+`"name_source": "label file"` = 使用者自己的 VCDS 格式純文字標籤檔 (`--labels 資料夾`，或 `<資料夾>/labels`)，
+**沒有在實車確認**，引用時要說明；`name_detail` 是標籤檔裡的說明 (規格範圍等)。加密的 `.clb` 不支援。
+
 ## 寫入 (會改車)：一定是兩步
 
 1. **產生計畫**：在 `--json` 模式下執行寫入指令 (例如 `feature leaving-home on`)。
@@ -123,6 +129,7 @@ Claude Code 預設每次呼叫 MCP 工具都會問人；**不要把 `apply` 設�
 
 - 車型資料在 `profiles/*.json`，目前只有本車 (Skoda Yeti 1.2 TSI 2014)。換車型：環境變數
   `YETI_DIAG_PROFILE=<名稱或路徑>`；新設定檔先跑 `profile` 看格式問題，再接車跑 `probe`、`tp20-probe`、`verify`。
+  別的車：`discover --name <名稱>` (只讀) 自動產生設定檔，VIN 後 6 碼預設遮蔽 (`--keep-vin` 保留)。
 - `clear-dtc` 新舊模組都能用 (舊模組 KWP `14 FF 00`)，2026-11-03 已在 72 右後門實車清除成功。
 - 09 中央電子長編碼寫入：2026-11-06 實車寫入成功 (原值寫回驗證流程)；`feature` 仍屬實驗，每次都要人同意。
 - **行駛中 (OBD 車速 > 3 km/h) 工具會拒絕連所有舊模組 (TP2.0) 與任何寫入** (結束碼 4 `refused`)：

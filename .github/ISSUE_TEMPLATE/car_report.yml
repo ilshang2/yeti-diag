@@ -1,0 +1,63 @@
+name: 回報我的車 / Car report
+description: 你的車能不能用？成功、失敗都很有用 / Does it work on your car? Success and failure both help.
+title: "[車] 廠牌 車型 年份 引擎 / Make Model Year Engine"
+labels: ["car-report"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        謝謝幫忙測試！**貼任何內容前請刪掉車身號碼 (VIN，17 碼)。**
+        Thanks for testing! **Remove your VIN (17 characters) from anything you paste.**
+  - type: input
+    id: car
+    attributes:
+      label: 車型 / Car
+      description: 廠牌、車型、年份、引擎 / Make, model, year, engine
+      placeholder: Skoda Yeti 1.2 TSI 2014
+    validations:
+      required: true
+  - type: input
+    id: adapter
+    attributes:
+      label: 接頭 / Adapter
+      description: 型號、藍牙或 USB、COM 埠；不知道就寫外觀 / Model, Bluetooth or USB
+      placeholder: ELM327 v1.5 藍牙 (無名仿製)、Vgate V-LINK、OBDLink…
+    validations:
+      required: true
+  - type: dropdown
+    id: how
+    attributes:
+      label: 用哪個方式 / How did you run it
+      options:
+        - YetiDiag.exe (圖形介面 / GUI)
+        - 指令列 / command line (yeti.ps1)
+        - AI 助手 + PROMPT.md / AI agent
+    validations:
+      required: true
+  - type: checkboxes
+    id: works
+    attributes:
+      label: 哪些正常 / What worked
+      options:
+        - label: 連線、讀電壓 / connect, voltage
+        - label: 即時儀表 / live dashboard
+        - label: 各缸失火、排放自檢 / misfire, readiness
+        - label: 全車掃描 (autoscan) 有讀到舊模組 / whole-car scan found TP2.0 modules
+        - label: 故障碼跟 VCDS / Car Scanner 一樣 / fault codes match another tool
+        - label: 09 隱藏功能讀取 / reading 09 hidden features
+  - type: textarea
+    id: result
+    attributes:
+      label: 結果與問題 / Result and problems
+      description: 哪裡不對、錯誤訊息、跟其他軟體比較的差異 / What went wrong, error messages, differences
+    validations:
+      required: true
+  - type: textarea
+    id: profile
+    attributes:
+      label: 車型設定檔 (選填) / Car profile (optional)
+      description: |
+        不是 Skoda Yeti 2014 的話，請跑只讀的 `.\yeti.ps1 --elm COM5 discover --name 你的車`，把 `profiles\你的車.json` 貼上或拖進來。
+        VIN 後 6 碼已自動遮蔽。
+        Not a 2014 Yeti? Run the read-only `discover --name your_car` and attach `profiles\your_car.json` (the VIN serial is masked automatically).
+      render: json

@@ -29,7 +29,10 @@ Answer me in the language I wrote the blanks in.
    Windows Bluetooth settings if I have not. Then find it: `.\yeti.ps1 --elm auto --json voltage`.
    If that fails, list the COM ports and try the outgoing Bluetooth one.
 5. If my car is not a Skoda Yeti 2014, tell me the built-in profile is for that car, then run the
-   read-only `discover` command to build a profile for mine and explain what matched.
+   read-only `discover --name <short_name> --title "<my car>"` command to build a profile for mine
+   (the VIN serial is masked automatically), set `YETI_DIAG_PROFILE=<short_name>` and explain what matched.
+6. If I have plain-text VCDS-style label files (`.lbl`), use `--labels <folder>` with `measure`; names
+   from them carry `"name_source": "label file"` — say they are not checked on a car.
 
 ## Reading (safe, start here)
 
@@ -58,6 +61,7 @@ tool has no description for it — do not guess. When a value has `"verified": f
 ## When you finish
 
 Summarize what you found, what (if anything) you changed and where the backups are. If something
-did not work with my car or adapter, offer to draft a GitHub issue for
-https://github.com/ilshang2/yeti-diag/issues with the car, adapter, command and error — and remove
-my VIN (17 characters, in the `vin` field and in `autoscan` reports) before showing it to me.
+did not work with my car or adapter — or if it worked on a car other than a 2014 Yeti — offer to
+draft a car report for https://github.com/ilshang2/yeti-diag/issues/new?template=car_report.yml
+(car, adapter, what worked, errors, and the `discover` profile if we made one), and remove my VIN
+(17 characters, in `vin` fields and `autoscan` reports) before showing it to me.

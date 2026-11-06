@@ -117,14 +117,23 @@ py -3.13 tools\drive_log.py --elm COM5   # 行駛記錄 (只讀引擎，熄火�
 
 ## 別的車
 
-模組清單、CAN ID、零件號碼都在 `profiles\skoda_yeti_2014.json`。別的車可以先跑只讀的
-`.\yeti.ps1 --elm COM5 discover` 自動產生設定檔，再設環境變數 `YETI_DIAG_PROFILE=檔名`。
+模組清單、CAN ID、零件號碼都在 `profiles\skoda_yeti_2014.json`。別的車先跑只讀的
+`.\yeti.ps1 --elm COM5 discover --name 你的車` 自動產生設定檔 (VIN 後 6 碼自動遮蔽，可以直接分享)，
+再設環境變數 `YETI_DIAG_PROFILE=你的車`。
 
-## 幫忙測試
+測量群組的名稱：如果你自己有 VCDS 格式的**純文字**標籤檔 (`.lbl`)，加 `--labels 資料夾` 就會套用
+(加密的 `.clb` 不支援；標籤檔不隨程式附送)。
+
+## 參與：回報你的車
+
+這個專案能支援多少車，靠的是車友一人回報一台 (跟 Renault 車主社群的 [ddt4all](https://github.com/cedricp/ddt4all) 一樣)。不用會寫程式：
 
 1. 先只跑讀取：圖形介面的前三個分頁，或 `voltage`、`autoscan`、`misfire`、`readiness`。
-2. 到 [Issues](https://github.com/ilshang2/yeti-diag/issues) 回報：車型 / 年份 / 引擎、接頭型號、哪個功能、結果是否跟 VCDS / Car Scanner 一樣。
-3. 貼報告前請**刪掉自己的車身號碼 (VIN，17 碼)**：`reports\` 裡的檔案會記錄從車上讀到的 VIN。
+2. 開一個 [「回報我的車」](https://github.com/ilshang2/yeti-diag/issues/new?template=car_report.yml)，照表單填。**成功、失敗都請回報，失敗的最有幫助。**
+3. 不是 2014 Yeti 的話，附上 `discover` 產生的設定檔。
+4. 貼任何東西前請**刪掉車身號碼 (VIN，17 碼)**：`reports\` 裡的檔案會記錄從車上讀到的 VIN。
+
+詳細說明 (設定檔、標籤檔、程式) 見 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## 開發者
 

@@ -1,0 +1,27 @@
+name: 程式問題 / Bug
+description: 程式出錯、畫面怪怪的、說明寫錯 / The program failed, the GUI misbehaves, the docs are wrong
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: "**貼任何內容前請刪掉車身號碼 (VIN)。** / **Remove your VIN before pasting.**"
+  - type: textarea
+    id: what
+    attributes:
+      label: 發生什麼事 / What happened
+      description: 做了什麼、預期什麼、實際出現什麼 / What you did, expected, got
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: 錯誤訊息或輸出 / Error or output
+      description: 圖形介面最下面黑色區塊的文字，或指令加 `--json` 的輸出 / The black log box in the GUI, or the command's `--json` output
+      render: text
+  - type: input
+    id: env
+    attributes:
+      label: 版本與環境 / Version and setup
+      placeholder: v0.5.0 exe, Windows 11, Vgate V-LINK, Golf 6 2010
+    validations:
+      required: true
