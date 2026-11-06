@@ -1,460 +1,105 @@
-<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
-<title>Yeti 行車診斷</title>
-<meta name="claude:viewport-fit-sides" content="cover">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>yeti_diag — Skoda Yeti 藍牙 OBD 診斷工具</title>
+<meta name="description" content="用一般藍牙 ELM327 接頭診斷 Skoda Yeti (VW PQ35)：全車掃描、故障碼、失火、即時儀表、隱藏功能。">
 <style>
-/* Layout: one column of instrument-panel sections, summary strip first, detail below. */
-:root {
-  --bg: #eef1f0; --panel: #ffffff; --ink: #18211f; --muted: #5b6a66; --line: #d3dbd8;
-  --accent: #0b7a5f; --accent-ink: #ffffff;
-  --ok: #1f7a3e; --warn: #a86400; --bad: #b3261e; --off: #7b8784;
-  --font-body: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
-}
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --bg: #0f1514; --panel: #18201e; --ink: #e4ece9; --muted: #93a49f; --line: #2a3532;
-  --accent: #3fc79c; --accent-ink: #062018;
-  --ok: #5fcf86; --warn: #f0a63a; --bad: #ff7a6e; --off: #7e8c88; color-scheme: dark } }
-:root[data-theme="dark"] {
-  --bg: #0f1514; --panel: #18201e; --ink: #e4ece9; --muted: #93a49f; --line: #2a3532;
-  --accent: #3fc79c; --accent-ink: #062018;
-  --ok: #5fcf86; --warn: #f0a63a; --bad: #ff7a6e; --off: #7e8c88; color-scheme: dark }
-
-body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.55; }
-.wrap { max-width: 760px; margin: 0 auto; padding-block: 20px 40px;
-  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
-  display: grid; gap: 16px; }
-h1 { font-size: 1.5rem; margin: 0; text-wrap: balance; letter-spacing: .02em; }
-h2 { font-size: 1.05rem; margin: 0; }
-.sub { color: var(--muted); margin: 0; font-size: .9rem; }
-.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
-section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 12px; min-width: 0; }
-.head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
-.strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
-.gauge { display: grid; gap: 2px; }
-.gauge .label { font-size: .75rem; letter-spacing: .08em; color: var(--muted); }
-.gauge .value { font-family: var(--font-mono); font-size: 1.35rem; font-weight: 600; font-variant-numeric: tabular-nums; }
-.btns { display: flex; flex-wrap: wrap; gap: 8px; }
-button { font: inherit; border-radius: 8px; padding: 9px 14px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer; }
-button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
-button:disabled { opacity: .45; cursor: not-allowed; }
-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.notice { font-size: .85rem; color: var(--muted); border-left: 3px solid var(--warn); padding: 6px 10px; }
-.table { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
-th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
-th { font-size: .75rem; letter-spacing: .06em; color: var(--muted); font-weight: 500; }
-.chip { display: inline-block; font-size: .75rem; padding: 1px 8px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; }
-.chip.ok { color: var(--ok); } .chip.warn { color: var(--warn); } .chip.bad { color: var(--bad); } .chip.off { color: var(--off); }
-.feat { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; align-items: start; padding: 8px 0; border-bottom: 1px solid var(--line); }
-.feat:last-child { border-bottom: 0; }
-.feat .note { grid-column: 2; color: var(--muted); font-size: .85rem; }
-.coding { font-family: var(--font-mono); font-size: .85rem; overflow-wrap: anywhere; background: var(--bg); padding: 8px 10px; border-radius: 6px; }
-details summary { cursor: pointer; color: var(--muted); }
-#log { font-family: var(--font-mono); font-size: .75rem; max-height: 260px; overflow: auto; white-space: pre-wrap; background: var(--bg); padding: 8px; border-radius: 6px; margin: 8px 0 0; }
-.empty { color: var(--muted); font-size: .9rem; }
+  :root { --bg:#f4f6f5; --panel:#fff; --ink:#18211f; --muted:#5b6a66; --line:#d3dbd8; --accent:#0b7a5f; --warn:#8a5200; --warn-bg:#fff6e5; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#0f1514; --panel:#18201e; --ink:#e4ece9; --muted:#93a49f; --line:#2a3532; --accent:#3fc79c; --warn:#f0b35a; --warn-bg:#2a2214; }
+  }
+  * { box-sizing:border-box }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.6 "Microsoft JhengHei","PingFang TC","Noto Sans TC",system-ui,sans-serif; }
+  .wrap { max-width:760px; margin:0 auto; padding:32px 20px 48px; }
+  h1 { font-size:1.7rem; margin:0 0 4px; }
+  h2 { font-size:1.15rem; margin:28px 0 10px; }
+  .sub { color:var(--muted); margin:0 0 20px; }
+  .lang { float:right; font-size:.9rem; }
+  a { color:var(--accent); }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:16px; }
+  .card h3 { margin:0 0 6px; font-size:1rem; }
+  .card p { margin:0 0 10px; color:var(--muted); font-size:.93rem; }
+  .btn { display:inline-block; background:var(--accent); color:#fff; text-decoration:none; padding:8px 14px; border-radius:8px; font-weight:600; }
+  @media (prefers-color-scheme: dark) { .btn { color:#062018; } }
+  .warn { background:var(--warn-bg); border-left:4px solid var(--warn); padding:12px 16px; border-radius:6px; font-size:.93rem; }
+  .warn strong { color:var(--warn); }
+  ul { padding-left:1.2em; }
+  code { background:var(--panel); border:1px solid var(--line); border-radius:4px; padding:1px 5px; font-size:.9em; }
+  footer { margin-top:36px; color:var(--muted); font-size:.85rem; }
+  [lang=en] { display:none; }
+  body.en [lang=zh-Hant] { display:none; }
+  body.en [lang=en] { display:revert; }
 </style>
-
+</head>
+<body>
 <div class="wrap">
-  <header class="head">
-    <div>
-      <h1>Yeti 行車診斷</h1>
-      <p class="sub">Skoda Yeti 1.2 TSI 2014 · 車身號碼 <span class="mono" id="vin">TMBJF65L8E60•••••</span></p>
-    </div>
-    <span class="chip off" id="mode-chip">未連線</span>
-  </header>
+  <a class="lang" href="#" onclick="document.body.classList.toggle('en');return false;"><span lang="zh-Hant">English</span><span lang="en">中文</span></a>
 
-  <section aria-labelledby="conn-h">
-    <div class="head"><h2 id="conn-h">連線</h2><span class="sub" id="adapter">接頭：尚未連線</span></div>
-    <div class="btns">
-      <button class="primary" id="btn-ble">連線藍牙接頭</button>
-      <button id="btn-demo">示範模式</button>
-    </div>
-    <p class="notice" id="ble-note">藍牙連線需要在 Android 的 Chrome 直接開啟這個網頁。藍牙路徑尚未在實車測試；示範模式的資料是 2026-11-03 在本車實際讀到的結果。</p>
-    <div class="strip">
-      <div class="gauge"><span class="label">電瓶電壓</span><span class="value" id="volt">— V</span></div>
-      <div class="gauge"><span class="label">讀到的模組</span><span class="value" id="mod-count">— / 15</span></div>
-      <div class="gauge"><span class="label">故障碼</span><span class="value" id="dtc-count">—</span></div>
-    </div>
-    <div class="btns">
-      <button id="btn-scan" disabled>全車掃描</button>
-      <button id="btn-feat" disabled>讀隱藏功能</button>
-    </div>
-  </section>
+  <div lang="zh-Hant">
+    <h1>yeti_diag</h1>
+    <p class="sub">用一般的藍牙 ELM327 接頭診斷 Skoda Yeti (VW PQ35 平台)：全車掃描、故障碼、各缸失火、排放自檢、即時儀表、09 隱藏功能。</p>
 
-  <section aria-labelledby="mod-h">
-    <div class="head"><h2 id="mod-h">模組</h2><span class="sub">零件號碼與 VCDS 掃描結果比對</span></div>
-    <div class="table">
-      <table>
-        <thead><tr><th>位址</th><th>模組</th><th>零件號碼</th><th>狀態</th></tr></thead>
-        <tbody id="mod-body"><tr><td colspan="4" class="empty">連線後按「全車掃描」。</td></tr></tbody>
-      </table>
+    <div class="cards">
+      <div class="card"><h3>點兩下就用</h3><p>Windows 圖形介面，免安裝 Python。</p><a class="btn" href="https://github.com/ilshang2/yeti-diag/releases/latest">下載 YetiDiag.exe</a></div>
+      <div class="card"><h3>交給 AI 助手</h3><p>在 Claude Code、Codex、Gemini CLI 貼上提示詞，AI 幫你安裝、連車、用白話解釋。</p><a class="btn" href="https://github.com/ilshang2/yeti-diag/blob/main/PROMPT.md">看 PROMPT.md</a></div>
+      <div class="card"><h3>原始碼 / 指令列</h3><p>Python 程式、模擬器、測試與完整說明。</p><a class="btn" href="https://github.com/ilshang2/yeti-diag">GitHub</a></div>
     </div>
-  </section>
 
-  <section aria-labelledby="dtc-h">
-    <div class="head"><h2 id="dtc-h">故障碼</h2><span class="sub">只讀取，不清除</span></div>
-    <div id="dtc-list" class="empty">尚未掃描。</div>
-  </section>
+    <h2>能做什麼</h2>
+    <ul>
+      <li>全車掃描：新舊模組的零件號碼、編碼、故障碼 (含說明，與 VCDS 對照過)</li>
+      <li>引擎即時數據、各缸失火次數、排放自我檢測</li>
+      <li>即時儀表：只讀引擎，開車時也可以看、可以存檔</li>
+      <li>09 中央電子隱藏功能讀取與開關 (寫入為實驗功能)</li>
+      <li>每個指令都能輸出 JSON，也有 MCP 伺服器，方便 AI 操作</li>
+    </ul>
 
-  <section aria-labelledby="feat-h">
-    <div class="head"><h2 id="feat-h">隱藏功能 · 09 中央電子</h2><span class="sub">BCM 1K0 937 086 AA</span></div>
-    <p class="notice">目前只能讀取狀態。09 的寫入指令格式還沒確認，開關功能請先用 VCDS。</p>
-    <div id="coding" class="coding" hidden></div>
-    <div id="feat-list" class="empty">連線後按「讀隱藏功能」。</div>
-  </section>
+    <h2>使用前請看</h2>
+    <div class="warn">
+      <strong>使用風險自負。</strong>寫入可能讓功能失效或產生故障碼；只在作者的一台 Skoda Yeti 1.2 TSI 2014 上驗證過。
+      行駛中只能看即時儀表：車速超過 3 km/h 時程式會拒絕連 ABS 等模組與任何寫入。
+      與 Volkswagen、Škoda、Ross-Tech 無關。不提供改里程、防盜破解。
+    </div>
 
-  <section aria-labelledby="log-h">
-    <details><summary id="log-h">通訊紀錄</summary><pre id="log"></pre></details>
-  </section>
+    <h2>幫忙測試</h2>
+    <p>先只用讀取功能，到 <a href="https://github.com/ilshang2/yeti-diag/issues">GitHub Issues</a> 回報車型、接頭與結果。貼報告前請刪掉自己的車身號碼 (VIN)。</p>
+  </div>
+
+  <div lang="en">
+    <h1>yeti_diag</h1>
+    <p class="sub">Diagnose a Skoda Yeti (VW PQ35) with a cheap Bluetooth ELM327 adapter: whole-car scan, fault codes, misfire counters, readiness, live dashboard, 09 hidden features.</p>
+
+    <div class="cards">
+      <div class="card"><h3>Double-click</h3><p>Windows GUI, no Python needed.</p><a class="btn" href="https://github.com/ilshang2/yeti-diag/releases/latest">Download YetiDiag.exe</a></div>
+      <div class="card"><h3>Let an AI do it</h3><p>Paste the prompt into Claude Code, Codex or Gemini CLI: it installs, connects and explains in plain words.</p><a class="btn" href="https://github.com/ilshang2/yeti-diag/blob/main/PROMPT.md">Open PROMPT.md</a></div>
+      <div class="card"><h3>Source / CLI</h3><p>Python tool, simulator, tests and full docs.</p><a class="btn" href="https://github.com/ilshang2/yeti-diag/blob/main/README_en.md">GitHub</a></div>
+    </div>
+
+    <h2>What it does</h2>
+    <ul>
+      <li>Whole-car scan: part numbers, coding and decoded fault codes of new and old modules (checked against VCDS)</li>
+      <li>Engine live data, misfire counters per cylinder, emission readiness</li>
+      <li>Live dashboard: engine only, safe to watch while driving, can log to a file</li>
+      <li>Read and switch 09 hidden features (writing is experimental)</li>
+      <li>JSON output for every command and an MCP server for AI agents</li>
+    </ul>
+
+    <h2>Before you start</h2>
+    <div class="warn">
+      <strong>Use at your own risk.</strong> Writes can disable functions or set fault codes; verified on one Skoda Yeti 1.2 TSI 2014 only.
+      While driving, use only the live dashboard: above 3 km/h the tool refuses ABS and other modules and every write.
+      Not affiliated with Volkswagen, Škoda or Ross-Tech. No odometer or immobilizer features.
+    </div>
+
+    <h2>Help test</h2>
+    <p>Start with reads only and report your car, adapter and result in <a href="https://github.com/ilshang2/yeti-diag/issues">GitHub Issues</a>. Remove your VIN before posting.</p>
+  </div>
+
+  <footer>MIT License · <a href="https://github.com/ilshang2/yeti-diag">github.com/ilshang2/yeti-diag</a></footer>
 </div>
-
-<script>
-"use strict";
-// ---------- Vehicle profile (from the 2026-11-03 VCDS scan and verify run) ----------
-const UDS = [
-  { addr: "01", name: "引擎", part: "03F906070JJ", tx: 0x7E0, rx: 0x7E8 },
-  { addr: "08", name: "冷氣 (手動)", part: "3T0820047AK", tx: 0x746, rx: 0x7B0 },
-  { addr: "15", name: "安全氣囊", part: "5C0959655C", tx: 0x715, rx: 0x77F },
-  { addr: "16", name: "方向盤模組", part: "5K0953521CS", tx: 0x70C, rx: 0x776 },
-  { addr: "17", name: "儀表", part: "5L0920800L", tx: 0x714, rx: 0x77E },
-];
-const TP20 = [
-  { addr: "02", name: "變速箱 (DSG)", part: "0AM300065K", dest: 0x02 },
-  { addr: "03", name: "ABS/ESP", part: "1K0907379BM", dest: 0x03 },
-  { addr: "09", name: "中央電子", part: "1K0937086AA", dest: 0x20 },
-  { addr: "19", name: "閘道器", part: "7N0907530AK", dest: 0x1F },
-  { addr: "42", name: "駕駛座車門", part: "7N0959793F", dest: 0x22 },
-  { addr: "44", name: "電子轉向輔助", part: "1K0909144R", dest: 0x09 },
-  { addr: "52", name: "副駕車門", part: "7N0959792F", dest: 0x23 },
-  { addr: "62", name: "左後門", part: "7N0959795E", dest: 0x24 },
-  { addr: "72", name: "右後門", part: "7N0959795E", dest: 0x25 },
-];
-const FEATURES = [
-  ["急煞閃警示燈", 16, 2, "急煞時方向燈 (雙黃燈) 自動閃爍"],
-  ["霧燈轉向輔助照明", 14, 7, "低速轉彎時對應側前霧燈會亮"],
-  ["方向燈輕撥", 16, 0, "輕撥方向燈閃固定次數"],
-  ["後雨刷點滴刷", 21, 4, "後雨刷噴水後幾秒多刷一次"],
-  ["倒車時後雨刷作動", 21, 6, "前雨刷開著時打 R 檔，後雨刷自動刷"],
-  ["Leaving Home 照明", 17, 6, "遙控解鎖時頭燈亮一段時間"],
-  ["Coming Home 照明", 17, 5, "熄火下車後頭燈亮一段時間"],
-  ["上鎖時方向燈閃", 5, 0, "遙控上鎖/解鎖時方向燈閃一下"],
-  ["上鎖時喇叭響", 5, 1, "遙控上鎖時喇叭響一聲"],
-  ["遙控開窗時方向燈閃", 5, 5, "長按遙控器開關車窗時方向燈閃爍"],
-  ["倒車副駕後照鏡下傾", 4, 3, "打 R 檔時副駕後照鏡自動下傾"],
-  ["車速自動上鎖", 0, 2, "車速約 15 km/h 時自動上鎖"],
-  ["熄火自動解鎖", 0, 1, "拔鑰匙時自動解鎖"],
-  ["單鍵解鎖", 0, 3, "按一次只開駕駛座，按兩次全開"],
-];
-
-const $ = (id) => document.getElementById(id);
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const hex = (b) => Array.from(b, (x) => x.toString(16).padStart(2, "0").toUpperCase()).join("");
-const ascii = (b) => String.fromCharCode(...b).replace(/[^A-Za-z0-9]/g, "");
-function log(msg) { const el = $("log"); el.textContent += msg + "\n"; el.scrollTop = el.scrollHeight; }
-
-class NoResponse extends Error {}
-class Negative extends Error { constructor(sid, nrc) { super(`0x${sid.toString(16)} 被拒絕 (0x${nrc.toString(16)})`); this.nrc = nrc; } }
-
-// ---------- ELM327 over Bluetooth LE ----------
-const BLE_SERVICES = [0xfff0, 0xffe0, 0x18f0, "e7810a71-73ae-499d-8c15-faa9aef0c3f2"];
-class Elm {
-  async connect() {
-    this.device = await navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: BLE_SERVICES });
-    const server = await this.device.gatt.connect();
-    for (const s of BLE_SERVICES) {
-      try {
-        const svc = await server.getPrimaryService(s);
-        const chars = await svc.getCharacteristics();
-        this.rxc = chars.find((c) => c.properties.notify);
-        this.txc = chars.find((c) => c.properties.write || c.properties.writeWithoutResponse);
-        if (this.rxc && this.txc) break;
-      } catch (e) { /* try next service */ }
-    }
-    if (!this.rxc || !this.txc) throw new Error("找不到接頭的藍牙資料通道");
-    this.buf = "";
-    this.rxc.addEventListener("characteristicvaluechanged", (e) => { this.buf += new TextDecoder().decode(e.target.value); });
-    await this.rxc.startNotifications();
-    this.version = await this.cmd("ATZ", 2000);
-    for (const c of ["ATE0", "ATL0", "ATS0", "ATH1", "ATPBC001", "ATCAF0", "ATAL", "ATST32"]) await this.cmd(c);
-    this.st = 0x32; this.proto = null; this.header = null; this.filter = null; this.responses = true;
-    await this.useProto("uds");
-    return this.device.name || "藍牙接頭";
-  }
-  async write(text) {
-    const data = new TextEncoder().encode(text + "\r");
-    for (let i = 0; i < data.length; i += 20) {
-      const part = data.slice(i, i + 20);
-      if (this.txc.properties.writeWithoutResponse) await this.txc.writeValueWithoutResponse(part);
-      else await this.txc.writeValue(part);
-    }
-  }
-  async raw(text, wait = 1500) {
-    this.buf = "";
-    await this.write(text);
-    const end = Date.now() + wait;
-    while (Date.now() < end && !this.buf.includes(">")) await sleep(10);
-    const lines = this.buf.replace(">", "").split(/[\r\n]+/).map((l) => l.trim()).filter(Boolean);
-    log(`> ${text}  < ${lines.join(" | ")}`);
-    return lines;
-  }
-  async cmd(c, wait = 1000) {
-    for (let i = 0; i < 2; i++) {
-      const lines = await this.raw(c, wait);
-      if (lines[lines.length - 1] !== "?") return lines.join(" ");
-      await sleep(300);
-    }
-    throw new Error(`接頭不接受指令 ${c}`);
-  }
-  async useProto(kind) {
-    if (this.proto === kind) return;
-    await this.cmd(kind === "uds" ? "ATSP6" : "ATSPB");
-    await this.cmd("ATCAF0");
-    this.proto = kind; this.header = null; this.filter = null;
-  }
-  async select(tx, rx) {
-    if (this.header !== tx) { await this.cmd("ATSH" + tx.toString(16).padStart(3, "0").toUpperCase()); this.header = tx; }
-    if (this.filter !== rx) { await this.cmd("ATCRA" + rx.toString(16).padStart(3, "0").toUpperCase()); this.filter = rx; }
-  }
-  async longWait(on) {
-    const st = on ? 0xff : 0x32;
-    if (this.st !== st) { await this.cmd("ATST" + st.toString(16).padStart(2, "0").toUpperCase()); this.st = st; }
-  }
-  async setResponses(on) {
-    if (this.responses !== on) { await this.cmd(on ? "ATR1" : "ATR0"); this.responses = on; }
-  }
-  async frame(bytes, { wait = 1500, expect = 0, noReply = false } = {}) {
-    await this.setResponses(!noReply);
-    const lines = await this.raw(hex(bytes) + (expect && !noReply ? expect.toString(16).toUpperCase() : ""), noReply ? 300 : wait);
-    if (noReply) return [];
-    const out = [];
-    for (let l of lines) {
-      l = l.replace(/\s/g, "");
-      if (/^(NODATA|STOPPED|OK)$/.test(l) || !/^[0-9A-F]+$/.test(l) || l.length < 5) continue;
-      out.push({ id: parseInt(l.slice(0, 3), 16), data: Uint8Array.from(l.slice(3).match(/../g).map((h) => parseInt(h, 16))) });
-    }
-    return out;
-  }
-  async voltage() { return parseFloat((await this.cmd("ATRV")).replace(/V/i, "")); }
-}
-
-// ---------- UDS over ISO-TP (reads only) ----------
-async function udsRequest(elm, mod, payload) {
-  await elm.useProto("uds");
-  await elm.longWait(false);
-  await elm.select(mod.tx, mod.rx);
-  const sf = new Uint8Array(8).fill(0x55); sf[0] = payload.length; sf.set(payload, 1);
-  let frames = (await elm.frame(sf)).filter((f) => f.id === mod.rx);
-  let msg = null;
-  for (const f of frames) {
-    const pci = f.data[0] >> 4;
-    if (pci === 0) msg = f.data.slice(1, 1 + (f.data[0] & 15));
-    if (pci === 1) {
-      const total = ((f.data[0] & 15) << 8) | f.data[1];
-      const buf = Array.from(f.data.slice(2, 8));
-      const fc = new Uint8Array(8).fill(0x55); fc[0] = 0x30; fc[1] = 0; fc[2] = 0;
-      for (const c of (await elm.frame(fc)).filter((x) => x.id === mod.rx && x.data[0] >> 4 === 2)) buf.push(...c.data.slice(1, 8));
-      msg = Uint8Array.from(buf.slice(0, total));
-    }
-  }
-  if (!msg) throw new NoResponse(`${mod.addr} 沒有回應`);
-  if (msg[0] === 0x7f) throw new Negative(payload[0], msg[2]);
-  return msg;
-}
-
-// ---------- VW TP2.0 + KWP2000 (reads only; block size 1 for the ELM) ----------
-class Tp20 {
-  constructor(elm, dest) { this.elm = elm; this.dest = dest; this.messages = []; this.buf = []; this.closed = false; }
-  async ex(data, { wait = 300, expect = 0, noReply = false } = {}) {
-    await this.elm.useProto("tp20");
-    await this.elm.longWait(expect > 0);
-    await this.elm.select(this.tx, this.rx);
-    return (await this.elm.frame(Uint8Array.from(data), { wait: Math.max(wait, expect ? 1500 : 300), expect, noReply }))
-      .filter((f) => f.id === this.rx).map((f) => f.data);
-  }
-  async open() {
-    this.tx = 0x200; this.rx = 0x200 + this.dest;
-    const resp = (await this.ex([this.dest, 0xc0, 0x00, 0x10, 0x00, 0x03, 0x01], { expect: 1 })).find((f) => f[1] === 0xd0);
-    if (!resp) throw new NoResponse(`TP2.0 0x${this.dest.toString(16)} 沒有回應`);
-    this.rx = resp[2] | ((resp[3] & 15) << 8);
-    this.tx = resp[4] | ((resp[5] & 15) << 8);
-    this.seq = 0; this.rxSeq = 0;
-    const p = await this.ex([0xa0, 0x01, 0x8a, 0xff, 0x32, 0xff], { expect: 1 });
-    if (!p.some((f) => f[0] === 0xa1)) throw new NoResponse("通道參數沒有回應");
-  }
-  async close() { try { await this.ex([0xa8], { wait: 100 }); } catch (e) { /* ignore */ } }
-  async ack(seq, more) { return this.ex([0xb0 | ((seq + 1) & 15)], { wait: more ? 1500 : 50, expect: more ? 1 : 0 }); }
-  async process(frames) {
-    for (const f of frames) {
-      const kind = f[0] >> 4;
-      if (f[0] === 0xa8) { this.closed = true; return; }
-      if (kind === 0xb || f[0] === 0xa1 || f[0] === 0xa3 || kind > 3) continue;
-      const seq = f[0] & 15;
-      if (seq !== this.rxSeq) { if (kind <= 1) await this.ack(seq, false); continue; }
-      this.rxSeq = (seq + 1) & 15;
-      this.buf.push(...f.slice(1));
-      if (kind === 1 || kind === 3) {
-        const len = ((this.buf[0] << 8) | this.buf[1]) & 0x7fff;
-        const msg = this.buf.slice(2, 2 + len);
-        if (msg.length && msg.length === len) this.messages.push(Uint8Array.from(msg));
-        this.buf = [];
-      }
-      if (kind <= 1) await this.process(await this.ack(seq, kind === 0));
-    }
-  }
-  async request(payload) {
-    const msg = [payload.length >> 8, payload.length & 255, ...payload];
-    this.messages = [];
-    const op = 0x10 | this.seq; this.seq = (this.seq + 1) & 15;
-    await this.process(await this.ex([op, ...msg], { expect: 2 }));
-    const end = Date.now() + 5000;
-    while (true) {
-      while (!this.messages.length) {
-        if (this.closed) throw new NoResponse("模組關閉了通道");
-        if (Date.now() > end) throw new NoResponse("模組沒有回應");
-        await this.process(await this.ex([0xa3], { wait: 300 }));
-      }
-      const r = this.messages.shift();
-      if (r[0] === 0x7f && r[2] === 0x78) continue; // response pending
-      if (r[0] === 0x7f) throw new Negative(payload[0], r[2]);
-      return r;
-    }
-  }
-  async session() {
-    for (let i = 0; i < 3; i++) {
-      try { return await this.request([0x10, 0x89]); }
-      catch (e) { if (!(e instanceof Negative) || e.nrc !== 0x21) throw e; await sleep(500); }
-    }
-    throw new NoResponse("模組一直回覆忙碌");
-  }
-}
-async function kwp(elm, dest, fn, tries = 3) {
-  for (let i = 0; i < tries; i++) {
-    const ch = new Tp20(elm, dest);
-    try { await ch.open(); await ch.session(); return await fn(ch); }
-    catch (e) { if (e instanceof Negative || i === tries - 1) throw e; await sleep(300); }
-    finally { await ch.close(); }
-  }
-}
-
-// ---------- Two cars behind one interface: the real one and the demo ----------
-class RealCar {
-  constructor(elm) { this.elm = elm; }
-  voltage() { return this.elm.voltage(); }
-  async udsPart(mod) { return ascii((await udsRequest(this.elm, mod, [0x22, 0xf1, 0x87])).slice(3)); }
-  async tpPart(mod) {
-    try { return ascii((await kwp(this.elm, mod.dest, (c) => c.request([0x22, 0xf1, 0x87]), 2)).slice(3, 15)); }
-    catch (e) { return ascii((await kwp(this.elm, mod.dest, (c) => c.request([0x1a, 0x9b]))).slice(2, 14)); }
-  }
-  async tpDtcs(mod) {
-    const r = await kwp(this.elm, mod.dest, (c) => c.request([0x18, 0x02, 0xff, 0x00]));
-    const out = [];
-    // 58, count, then 3 bytes per code: high, low, status
-    for (let i = 2; i + 2 < r.length; i += 3) out.push({ code: (r[i] << 8) | r[i + 1], status: r[i + 2] });
-    return out.filter((d) => d.code !== 0xffff);
-  }
-  async coding09() { return (await kwp(this.elm, 0x20, (c) => c.request([0x22, 0x06, 0x00]))).slice(3); }
-}
-const DEMO_CODING = "6E000AB8A80508E4401000C01100816C4F0000AE525D8960E48040000040";
-class DemoCar {
-  async voltage() { await sleep(200); return 13.7; }
-  async udsPart(mod) { await sleep(150); return mod.part; }
-  async tpPart(mod) { await sleep(250); return mod.part; }
-  async tpDtcs(mod) { await sleep(250); return mod.addr === "62" || mod.addr === "72" ? [{ code: 2115, status: 0x68 }] : []; }
-  async coding09() { await sleep(400); return Uint8Array.from(DEMO_CODING.match(/../g).map((h) => parseInt(h, 16))); }
-}
-
-// ---------- UI ----------
-let car = null;
-function setMode(text, cls) { const c = $("mode-chip"); c.textContent = text; c.className = "chip " + cls; }
-function ready(on) { $("btn-scan").disabled = !on; $("btn-feat").disabled = !on; }
-
-if (!("bluetooth" in navigator)) {
-  $("btn-ble").disabled = true;
-  $("ble-note").textContent = "這個瀏覽器不支援網頁藍牙 (或在預覽框架裡被擋下)。請用 Android 的 Chrome 直接開啟本頁的網址；這裡可以先用示範模式看操作流程。示範資料是 2026-11-03 在本車實際讀到的結果。";
-}
-
-$("btn-ble").addEventListener("click", async () => {
-  try {
-    setMode("連線中…", "warn");
-    const elm = new Elm();
-    const name = await elm.connect();
-    car = new RealCar(elm);
-    $("adapter").textContent = `接頭：${name} (${elm.version || "ELM327"})`;
-    setMode("藍牙已連線", "ok");
-    $("volt").textContent = (await car.voltage()).toFixed(2) + " V";
-    ready(true);
-  } catch (e) {
-    setMode("連線失敗", "bad");
-    $("adapter").textContent = "接頭：" + e.message;
-  }
-});
-
-$("btn-demo").addEventListener("click", async () => {
-  car = new DemoCar();
-  $("adapter").textContent = "接頭：示範模式 (2026-11-03 實車資料)";
-  setMode("示範模式", "warn");
-  $("volt").textContent = (await car.voltage()).toFixed(2) + " V";
-  ready(true);
-});
-
-$("btn-scan").addEventListener("click", async () => {
-  ready(false);
-  const body = $("mod-body");
-  body.innerHTML = "";
-  let okCount = 0;
-  const dtcRows = [];
-  const all = [...UDS.map((m) => ({ ...m, kind: "uds" })), ...TP20.map((m) => ({ ...m, kind: "tp" }))]
-    .sort((a, b) => a.addr.localeCompare(b.addr));
-  for (const m of all) {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td class="mono">${m.addr}</td><td>${m.name}</td><td class="mono">讀取中…</td><td><span class="chip off">讀取中</span></td>`;
-    body.appendChild(tr);
-    try {
-      const part = m.kind === "uds" ? await car.udsPart(m) : await car.tpPart(m);
-      const match = part === m.part;
-      if (match) okCount++;
-      tr.children[2].textContent = part;
-      tr.children[3].innerHTML = match ? '<span class="chip ok">與 VCDS 相同</span>' : `<span class="chip warn">預期 ${m.part}</span>`;
-      if (m.kind === "tp" && ["42", "52", "62", "72", "09", "19"].includes(m.addr)) {
-        for (const d of await car.tpDtcs(m)) dtcRows.push({ m, d });
-      }
-    } catch (e) {
-      tr.children[2].textContent = "—";
-      tr.children[3].innerHTML = `<span class="chip bad">${e.message}</span>`;
-    }
-    $("mod-count").textContent = `${okCount} / ${all.length}`;
-  }
-  $("dtc-count").textContent = String(dtcRows.length);
-  const list = $("dtc-list");
-  if (!dtcRows.length) { list.textContent = "沒有讀到故障碼。"; list.className = "empty"; }
-  else {
-    list.className = "table";
-    list.innerHTML = `<table><thead><tr><th>模組</th><th>代碼</th><th>說明</th></tr></thead><tbody>${dtcRows.map(({ m, d }) =>
-      `<tr><td>${m.addr} ${m.name}</td><td class="mono">${String(d.code).padStart(5, "0")}</td><td>${d.code === 2115 ? "中控鎖門鎖單元訊號不合理 (間歇性)" : "狀態 0x" + d.status.toString(16).toUpperCase()}</td></tr>`).join("")}</tbody></table>`;
-  }
-  ready(true);
-});
-
-$("btn-feat").addEventListener("click", async () => {
-  ready(false);
-  try {
-    const c = await car.coding09();
-    const box = $("coding"); box.hidden = false; box.textContent = "長編碼 " + hex(c);
-    const list = $("feat-list"); list.className = ""; list.innerHTML = "";
-    for (const [name, byte, bit, note] of FEATURES) {
-      const on = (c[byte] >> bit) & 1;
-      const row = document.createElement("div");
-      row.className = "feat";
-      row.innerHTML = `<span class="chip ${on ? "ok" : "off"}">${on ? "開" : "關"}</span><strong>${name}</strong><span class="note">${note} · <span class="mono">Byte ${byte} Bit ${bit}</span></span>`;
-      list.appendChild(row);
-    }
-  } catch (e) {
-    $("feat-list").textContent = "讀取失敗：" + e.message;
-  }
-  ready(true);
-});
-</script>
-
-</body></html>
+<script>if ((navigator.language || "").slice(0, 2) !== "zh") document.body.classList.add("en");</script>
+</body>
+</html>

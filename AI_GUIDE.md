@@ -124,5 +124,7 @@ Claude Code 預設每次呼叫 MCP 工具都會問人；**不要把 `apply` 設�
 - 車型資料在 `profiles/*.json`，目前只有本車 (Skoda Yeti 1.2 TSI 2014)。換車型：環境變數
   `YETI_DIAG_PROFILE=<名稱或路徑>`；新設定檔先跑 `profile` 看格式問題，再接車跑 `probe`、`tp20-probe`、`verify`。
 - `clear-dtc` 新舊模組都能用 (舊模組 KWP `14 FF 00`)，2026-11-03 已在 72 右後門實車清除成功。
-- 09 中央電子的長編碼寫入格式還不知道 (要錄 VCDS 的封包)，所以 `feature` 在實車上目前不能用。
-- 只支援會產生 COM 埠的藍牙接頭 (傳統藍牙 SPP)；BLE 接頭還不支援。
+- 09 中央電子長編碼寫入：2026-11-06 實車寫入成功 (原值寫回驗證流程)；`feature` 仍屬實驗，每次都要人同意。
+- **行駛中 (OBD 車速 > 3 km/h) 工具會拒絕連所有舊模組 (TP2.0) 與任何寫入** (結束碼 4 `refused`)：
+  行駛中讀 03 ABS 會讓儀表叮聲、ABS / 車身穩定燈閃。只有引擎 OBD (`obd`、`misfire`、`readiness`) 行駛中可讀。**不要用 `--allow-moving` 繞過。**
+- 接頭：傳統藍牙 (有 COM 埠) 與 USB 實車測過；BLE (`--elm BLE:名稱`) 有支援但還沒用實體接頭測過。
