@@ -1,12 +1,40 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.chaquo.python")
 }
 
+// Release signing: the key and its password live outside the repo (make_keystore.ps1 creates
+// both). Without that file `assembleRelease` gives an unsigned APK; `assembleDebug` always works.
+val keystoreProps = Properties().apply {
+    val path = System.getenv("YETI_KEYSTORE_PROPERTIES")
+        ?: "${System.getProperty("user.home")}/.yeti-diag/keystore.properties"
+    File(path).takeIf { it.exists() }?.inputStream()?.use { load(it) }
+}
+
 android {
     namespace = "io.github.ilshang2.yetidiag"
     compileSdk = 35
+
+    signingConfigs {
+        if (keystoreProps.containsKey("storeFile")) {
+            create("release") {
+                storeFile = File(keystoreProps.getProperty("storeFile"))
+                storePassword = keystoreProps.getProperty("storePassword")
+                keyAlias = keystoreProps.getProperty("keyAlias")
+                keyPassword = keystoreProps.getProperty("keyPassword")
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            signingConfig = signingConfigs.findByName("release")
+        }
+    }
 
     defaultConfig {
         applicationId = "io.github.ilshang2.yetidiag"

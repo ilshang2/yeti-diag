@@ -55,7 +55,7 @@ V-LINK (v2.1). Cars on the same platform (Octavia II, Golf 5/6, Superb II…) ma
 | Clearing fault codes (UDS and TP2.0 modules) | **Experimental**: cleared on the car (UDS: climate; TP2.0: gateway, rear doors) |
 | UDS writes (`write-did`) | **Experimental**: simulator tested, little testing on the car; the cluster needs security access, not supported |
 | GUI (Windows exe) | New, simulator tested, being tested on the car |
-| Android app (`android/`) | Works on the car (one phone, one adapter); source only, no APK yet |
+| Android app (`android/`) | Works on the car (one phone, one adapter); APK in Releases |
 
 ## Adapter
 
@@ -91,10 +91,14 @@ The interface is in Traditional Chinese.
 - **保養 (service):** oil change reminder (5000 / 7500 / 10000 km). Kept on the phone only, **nothing is written to the car**.
 - **進階 (advanced):** any read command (for example `measure 62 1 3`); writes are refused here.
 
-**Source only for now, no APK download yet.** To build: install JDK 17 and the Android SDK, put
-`sdk.dir=<your SDK path>` (forward slashes) in `android/local.properties`, then `cd android` and
-`.\gradlew assembleDebug`. The APK is in `android\app\build\outputs\apk\debug\`. Pair the adapter in the
-phone's Bluetooth settings first, then pick it in the app and tap 連線 (connect).
+**Install:** download `YetiDiag-*.apk` from [Releases](https://github.com/ilshang2/yeti-diag/releases/latest)
+(Android 7 or later, 64-bit phone) and allow installing from unknown sources. Pair the adapter in the phone's
+Bluetooth settings first, then pick it in the app and tap 連線 (connect).
+
+**Build it yourself:** install JDK 17 and the Android SDK, put `sdk.dir=<your SDK path>` (forward slashes) in
+`android/local.properties`, then `cd android` and `.\gradlew assembleDebug`. For a signed release run
+`android\make_keystore.ps1` once (the key and its password go to `.yeti-diag` in your user folder, not into
+the repo), then `.\gradlew assembleRelease`.
 
 On the phone only two kinds of write are offered: hidden feature switches and clearing fault codes.
 The 09 central electrics module sometimes refuses diagnostics for a while (the app says so): switch the

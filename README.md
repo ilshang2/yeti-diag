@@ -15,7 +15,7 @@
 |---|---|
 | **只想點兩下就用** (Windows) | 到 [Releases](https://github.com/ilshang2/yeti-diag/releases/latest) 下載 `YetiDiag.exe`，見 [圖形介面](#圖形介面) |
 | **有 AI 編程助手** (Claude Code、Codex、Gemini CLI…) | 下載這個 repo，在資料夾裡開 AI，貼上 [`PROMPT.md`](PROMPT.md)。AI 會安裝、連車、用白話解釋結果，見 [交給 AI](#交給-ai-agent) |
-| **想用手機** (Android) | 見 [Android 手機 App](#android-手機-app)，目前要自己建置 APK |
+| **想用手機** (Android) | 到 [Releases](https://github.com/ilshang2/yeti-diag/releases/latest) 下載 `YetiDiag-*.apk`，見 [Android 手機 App](#android-手機-app) |
 | **會用指令列** | 見 [安裝](#安裝-windows) 與 [指令列](#指令列快速上手) |
 | **想先看看不接車** | 圖形介面的接頭選「SIM」，或指令加 `--sim`，用內建模擬器 |
 
@@ -51,7 +51,7 @@
 | 清除故障碼 (新舊模組) | **實驗**：實車清除成功 (UDS：冷氣；TP2.0：閘道器、後車門) |
 | UDS 模組寫入 (`write-did`) | **實驗**：模擬器通過，實車很少測；儀表需要安全存取，不支援 |
 | 圖形介面 (Windows exe) | 新功能，模擬器通過，實車測試中 |
-| Android 手機 App (`android/`) | 實車通過 (一支手機、一顆接頭)；只有原始碼，尚未提供 APK |
+| Android 手機 App (`android/`) | 實車通過 (一支手機、一顆接頭)；APK 在 Releases |
 
 ## 接頭準備
 
@@ -86,9 +86,12 @@
 - **保養**：換機油提醒 (5000 / 7500 / 10000 km)。只記在手機裡，**不寫入車子**。
 - **進階**：任何讀取指令 (例如 `measure 62 1 3`)，這裡不能寫入。
 
-目前**只有原始碼，還沒有放 APK 下載**，要自己建置：裝 JDK 17 與 Android SDK，在 `android/local.properties` 寫
-`sdk.dir=你的 SDK 路徑` (用正斜線)，然後 `cd android`、`.\gradlew assembleDebug`，
-APK 在 `android\app\build\outputs\apk\debug\`。手機先在系統藍牙設定配對接頭，再開 App 選接頭按「連線」。
+**安裝**：到 [Releases](https://github.com/ilshang2/yeti-diag/releases/latest) 下載 `YetiDiag-*.apk` (Android 7 以上、64 位元手機)，
+安裝時允許「安裝未知來源的應用程式」。手機先在系統藍牙設定配對接頭，再開 App 選接頭按「連線」。
+
+**自己建置**：裝 JDK 17 與 Android SDK，在 `android/local.properties` 寫 `sdk.dir=你的 SDK 路徑` (用正斜線)，
+然後 `cd android`、`.\gradlew assembleDebug`。要簽正式版：先跑一次 `android\make_keystore.ps1`
+(金鑰與密碼存在使用者資料夾的 `.yeti-diag`，不在 repo 裡)，再 `.\gradlew assembleRelease`。
 
 手機上只開放「隱藏功能開關」與「清除故障碼」兩種寫入，其他寫入只在電腦版。
 09 中央電子偶爾會暫時拒絕診斷 (App 會提示)：點火開關 OFF 等 10 秒再 ON 即可。
