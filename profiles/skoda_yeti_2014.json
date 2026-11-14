@@ -139,8 +139,8 @@
     }
   },
   "reference": {
-    "_note": "VCDS results of 2026-11-03, used by `verify`",
-    "09_coding": "6E000AB8A80508E4401000C01100816C4F0000AE525D8960E48040000040",
+    "_note": "VCDS results of 2026-11-03, used by `verify`. 09_coding: as read back after the phone writes of 2026-11-14 16:40 (Byte 4 A8->28, Byte 5 05->15, Byte 11 C0->C1)",
+    "09_coding": "6E000AB8281508E4401000C11100812C4F0000AE525D8960E48040000040",
     "door_dtc": 2115,
     "72_coding": "010001200000531003",
     "door_counts": {

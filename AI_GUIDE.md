@@ -33,7 +33,7 @@ Claude Code 預設每次呼叫 MCP 工具都會問人；**不要把 `apply` 設�
   "ok": true,
   "command": "autoscan",
   "tool": "yeti_diag",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "time": "2026-11-03T18:00:00",
   "vin": "TMBJF65L0E6000000",
   "sim": false,
@@ -130,8 +130,11 @@ Claude Code 預設每次呼叫 MCP 工具都會問人；**不要把 `apply` 設�
 - 車型資料在 `profiles/*.json`，目前只有本車 (Skoda Yeti 1.2 TSI 2014)。換車型：環境變數
   `YETI_DIAG_PROFILE=<名稱或路徑>`；新設定檔先跑 `profile` 看格式問題，再接車跑 `probe`、`tp20-probe`、`verify`。
   別的車：`discover --name <名稱>` (只讀) 自動產生設定檔，VIN 後 6 碼預設遮蔽 (`--keep-vin` 保留)。
-- `clear-dtc` 新舊模組都能用 (舊模組 KWP `14 FF 00`)，2026-11-03 已在 72 右後門實車清除成功。
-- 09 中央電子長編碼寫入：2026-11-06 實車寫入成功 (原值寫回驗證流程)；`feature` 仍屬實驗，每次都要人同意。
+- `clear-dtc` 新舊模組都能用 (舊模組 KWP `14 FF 00`，回覆最多等 4 秒)。實車清除成功：72 右後門 (2026-11-03)、08 冷氣 (UDS)、19 閘道器、62 / 72 後門 (2026-11-14，手機)。
+- 17 儀表的編碼 / 調整寫入需要 Security Access，本工具不實作 (同一道鎖保護里程)。保養里程提醒只在手機 App 端記錄，不寫車。
+- Android App (`android/`)：同一份核心加 `--elm android`，橋接程式 `android/app/src/main/python/yeti_app.py`；手機只開放 `feature` 與 `clear-dtc` 兩種寫入 (一樣是計畫 → 人同意 → `apply`)。
+- TP2.0 開通道被拒：`(D7)` 多半是 09 暫時拒絕診斷，要點火開關 OFF 10 秒再 ON；`(D8)` 是暫時沒有空通道，等幾秒重試。
+- 09 中央電子長編碼寫入：2026-11-06 起實車寫入成功多次 (`features` 的 `verified` = 「實車寫入」的項目)；`feature` 仍屬實驗，每次都要人同意。
 - **行駛中 (OBD 車速 > 3 km/h) 工具會拒絕連所有舊模組 (TP2.0) 與任何寫入** (結束碼 4 `refused`)：
   行駛中讀 03 ABS 會讓儀表叮聲、ABS / 車身穩定燈閃。只有引擎 OBD (`obd`、`misfire`、`readiness`) 行駛中可讀。**不要用 `--allow-moving` 繞過。**
 - 接頭：傳統藍牙 (有 COM 埠) 與 USB 實車測過；BLE (`--elm BLE:名稱`) 有支援但還沒用實體接頭測過。

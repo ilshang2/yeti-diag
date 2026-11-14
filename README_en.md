@@ -51,9 +51,11 @@ V-LINK (v2.1). Cars on the same platform (Octavia II, Golf 5/6, Superb II…) ma
 | Engine OBD live data, misfire counters (Mode $06), readiness | Works on the car, including logging while driving |
 | TP2.0 / KWP2000 modules: fault codes, identification, measuring blocks | Works on the car; some conversion formulas unverified (marked as such) |
 | Reading 09 hidden features | Works on the car |
-| Writing 09 long coding (hidden features) | **Experimental**: one successful write on the car (original value written back), backup before, read-back after |
-| UDS writes / clearing fault codes | **Experimental**: simulator tested, little testing on the car |
+| Writing 09 long coding (hidden features) | **Experimental**: 7 features written on the car (from the PC and the phone), backup before, read-back after |
+| Clearing fault codes (UDS and TP2.0 modules) | **Experimental**: cleared on the car (UDS: climate; TP2.0: gateway, rear doors) |
+| UDS writes (`write-did`) | **Experimental**: simulator tested, little testing on the car; the cluster needs security access, not supported |
 | GUI (Windows exe) | New, simulator tested, being tested on the car |
+| Android app (`android/`) | Works on the car (one phone, one adapter); source only, no APK yet |
 
 ## Adapter
 
@@ -75,6 +77,28 @@ Pick the adapter's COM port → "連線 / 讀電壓" (connect / read voltage). T
 - **健康檢查 (health):** misfire per cylinder, battery voltage, readiness, engine OBD.
 - **故障碼 (fault codes):** whole-car scan (car parked, 1–2 minutes).
 - **隱藏功能 (hidden features):** read 09's switches → tick → confirm old/new values → write (experimental). The first time it spends about a minute finding module addresses.
+
+## Android app
+
+`android/` is the phone version: the same Python core (Chaquopy) talking to the adapter over classic
+Bluetooth (SPP), no PC needed. Tested on the author's car with a Vgate V-LINK and one Android 15 phone.
+The interface is in Traditional Chinese.
+
+- **故障碼 (fault codes):** whole-car scan, share the report, clear the codes of one module or of all of them.
+- **即時 (live):** engine live data, safe while driving.
+- **電瓶 (battery):** battery check and cranking voltage test.
+- **功能 (features):** 09 hidden feature switches. Old and new values are shown first; nothing is sent until you tap 寫入 (write), and it is sent once.
+- **保養 (service):** oil change reminder (5000 / 7500 / 10000 km). Kept on the phone only, **nothing is written to the car**.
+- **進階 (advanced):** any read command (for example `measure 62 1 3`); writes are refused here.
+
+**Source only for now, no APK download yet.** To build: install JDK 17 and the Android SDK, put
+`sdk.dir=<your SDK path>` (forward slashes) in `android/local.properties`, then `cd android` and
+`.\gradlew assembleDebug`. The APK is in `android\app\build\outputs\apk\debug\`. Pair the adapter in the
+phone's Bluetooth settings first, then pick it in the app and tap 連線 (connect).
+
+On the phone only two kinds of write are offered: hidden feature switches and clearing fault codes.
+The 09 central electrics module sometimes refuses diagnostics for a while (the app says so): switch the
+ignition OFF, wait 10 seconds, switch it ON again.
 
 ## Let an AI agent drive
 

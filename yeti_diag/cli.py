@@ -30,7 +30,7 @@ from .vehicle import (DIAG_BITRATE, ID_DIDS, REAR_DOOR_DEST, TP20_MODULES, TP20_
                       UDS_MODULES, UDS_VALUES, VCDS_TRUTH, VIN, Module)
 from .paths import DATA_ROOT
 
-TOOL_VERSION = "0.5.0"
+TOOL_VERSION = "0.6.0"
 REPORT_DIR = DATA_ROOT / "reports"
 
 EXIT_CODES = {
@@ -86,6 +86,12 @@ class Transport:
                 self.elm = Elm327(serial_obj=BleSerial(a.elm[4:]))
             except Exception as e:  # noqa: BLE001 - bleak raises its own types; all mean "no link"
                 raise CliError(f"BLE 接頭 {a.elm[4:]} 連不上: {e}。先用 ble-scan 看名稱或位址。", "connection")
+        elif a.elm and a.elm.lower() == "android":
+            from .android_serial import AndroidSerial
+            try:
+                self.elm = Elm327(serial_obj=AndroidSerial())
+            except OSError as e:
+                raise CliError(str(e), "connection")
         elif a.elm:
             port, ser = a.elm, None
             if port.lower() == "auto":
@@ -1164,17 +1170,27 @@ def cmd_verify(args):
                       f"位址 {modules[addr]}" if addr in modules else "沒找到")
 
         if "09" in modules and not driving:
-            hit = None
+            hit, read, problem = None, None, None
             for req in tp20.CODING_READS:
                 try:
                     data = kwp_call(t, int(modules["09"], 16), lambda k: k.read_raw(req))
-                except (*TP20_RETRY_ERRORS, uds.NegativeResponse):
+                except (*TP20_RETRY_ERRORS, uds.NegativeResponse) as e:
+                    problem = problem or str(e)
                     continue
+                if req == tp20.CODING_READS[0]:
+                    read = data
                 if VCDS_TRUTH["09_coding"] in data:
                     hit = bytes(req).hex(" ").upper()
                     break
-            check("09 長編碼與 VCDS 相同", hit is not None,
-                  f"在 {hit} 找到" if hit else "各讀取方式中都沒找到")
+            # Say why: a coding changed since the reference was recorded is not a read problem.
+            if hit:
+                detail = f"在 {hit} 找到"
+            elif read is not None:
+                detail = (f"讀到 {read.hex().upper()}，參考值 {VCDS_TRUTH['09_coding'].hex().upper()} "
+                          "(讀取正常；編碼改過的話要更新設定檔 reference.09_coding)")
+            else:
+                detail = f"讀不到編碼: {problem}"
+            check("09 長編碼與 VCDS 相同", hit is not None, detail)
 
         for addr in ("62", "72"):
             if addr not in modules:

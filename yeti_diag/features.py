@@ -44,7 +44,7 @@ FEATURES = [
     Feature("single-unlock", "單鍵解鎖", 0, 3, "按一次只開駕駛座，按兩次全開"),
     # 2026-11-05 LCH 全 30 bytes 畫面 (1K0 937 086 AA)
     Feature("drl", "日行燈", 15, 6, "日行燈 (獨立燈組) 啟用；2026-11-05 已關閉 (6C -> 2C)", "實車寫入"),
-    Feature("drl-parking-brake", "拉手煞車時日行燈關", 11, 0, "手煞車拉起時日行燈不亮 (停車紅火省電)"),
+    Feature("drl-parking-brake", "拉手煞車時日行燈關", 11, 0, "手煞車拉起時日行燈不亮 (停車紅火省電)", "實車寫入"),
     Feature("drl-turn-signal", "打方向燈時日行燈熄", 15, 3, "打方向燈時同側日行燈暫時熄滅，方向燈比較明顯"),
     Feature("drl-position", "日行燈兼位置燈", 24, 7, "開小燈時日行燈 (調暗) 當位置燈"),
     Feature("cornering-reverse", "倒車開轉向輔助燈", 26, 6, "打 R 檔時轉向輔助照明 (霧燈) 亮"),
@@ -52,8 +52,8 @@ FEATURES = [
     Feature("sunroof-remote-close", "遙控舒適關天窗", 3, 1, "長按遙控上鎖鍵時天窗關閉"),
     Feature("comfort-remote", "遙控舒適開關窗", 3, 5, "長按遙控器開關車窗"),
     Feature("rain-closing", "下雨自動關窗", 4, 6, "下雨時自動關窗 / 天窗 (需雨量感測器，本車沒有)"),
-    Feature("unlock-horn", "解鎖時喇叭響", 5, 4, "遙控解鎖時喇叭響"),
-    Feature("windows-after-off", "熄火後可開關窗", 4, 7, "熄火後 (開門前) 還能操作電動窗 / 天窗"),
+    Feature("unlock-horn", "解鎖時喇叭響", 5, 4, "遙控解鎖時喇叭響；本車 2026-11-14 寫入成功 (05 -> 15) 但喇叭不響，沒有效果"),
+    Feature("windows-after-off", "熄火後可開關窗", 4, 7, "熄火後 (開門前) 還能操作電動窗 / 天窗", "實車寫入"),
 ]
 BY_KEY = {f.key: f for f in FEATURES}
 

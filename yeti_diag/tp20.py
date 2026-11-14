@@ -261,6 +261,9 @@ CODING_READS = ([0x22, 0x06, 0x00],) + tuple([0x1A, o] for o in IDENT_OPTIONS)
 UNSUPPORTED = (0x11, 0x12, 0x31, 0x80)
 
 
+CLEAR_WAIT = 4.0  # seconds to wait for the answer to a fault-memory clear
+
+
 class KwpClient:
     CLEAR_DTCS = bytes([0x14, 0xFF, 0x00])  # clearDiagnosticInformation, all groups
 
@@ -283,7 +286,11 @@ class KwpClient:
         sid = payload[0]
         self.ch.messages.clear()
         self.ch.send(payload)
-        deadline = time.monotonic() + self.ch.timeout
+        # Clearing takes a module longer than a read: the rear doors (62 / 72) had not
+        # answered 14 FF 00 within 1 s on the car (2026-11-14, phone). The request is
+        # still sent once; this only waits longer for its answer.
+        wait = max(self.ch.timeout, CLEAR_WAIT) if sid == 0x14 else self.ch.timeout
+        deadline = time.monotonic() + wait
         while True:
             resp = self.ch.recv(max(0.05, deadline - time.monotonic()))
             if resp is None:
