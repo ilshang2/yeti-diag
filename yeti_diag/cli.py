@@ -30,7 +30,7 @@ from .vehicle import (DIAG_BITRATE, ID_DIDS, REAR_DOOR_DEST, TP20_MODULES, TP20_
                       UDS_MODULES, UDS_VALUES, VCDS_TRUTH, VIN, Module)
 from .paths import DATA_ROOT
 
-TOOL_VERSION = "0.6.0"
+TOOL_VERSION = "0.6.1"
 REPORT_DIR = DATA_ROOT / "reports"
 
 EXIT_CODES = {

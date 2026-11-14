@@ -22,6 +22,6 @@ body:
     id: env
     attributes:
       label: 版本與環境 / Version and setup
-      placeholder: v0.6.0 exe, Windows 11, Vgate V-LINK, Golf 6 2010
+      placeholder: v0.6.1 exe, Windows 11, Vgate V-LINK, Golf 6 2010
     validations:
       required: true

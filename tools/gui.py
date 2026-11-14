@@ -3,7 +3,7 @@
 背景呼叫 yeti_diag 的 --json 介面，不卡畫面；結果顯示程式本身印的中文說明。所有寫入
 沿用程式本身的備份 / 電壓 / 確認 / 讀回驗證與行駛中保護，GUI 只多一層勾選與確認對話框。
 
-分頁：即時儀表 (只讀引擎，行駛中可用)、健康檢查、故障碼、隱藏功能。
+分頁：即時儀表 (只讀引擎，行駛中可用)、健康檢查、故障碼 (含清除)、隱藏功能、保養 (換機油提醒，不寫車)。
 
 執行 (開發)：  py -3.13 tools/gui.py
 打包成 exe ：  見 交接說明.md「獨立 exe」的重建指令
@@ -25,11 +25,13 @@ ROOT = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[1]))
 for p in (str(ROOT / ".deps"), str(ROOT)):
     if p not in sys.path:
         sys.path.insert(0, p)
-from yeti_diag import cli, uds  # noqa: E402
+from yeti_diag import cli, service, uds  # noqa: E402
 from yeti_diag.paths import DATA_ROOT  # noqa: E402
 from yeti_diag.vehicle import UDS_MODULES  # noqa: E402
 
 SETTINGS = DATA_ROOT / "reports" / "gui_settings.json"
+SERVICE_FILE = DATA_ROOT / "service.json"   # oil change reminder: this PC only, never written to the car
+LEVEL_COLORS = {"over": "#c62828", "soon": "#b26a00"}
 LIVE_PIDS = ((0x0D, "車速", "km/h"), (0x0C, "轉速", "rpm"), (0x05, "水溫", "°C"),
              (0x42, "電壓", "V"), (0x0F, "進氣溫度", "°C"), (0x46, "外氣溫度", "°C"))
 
@@ -103,6 +105,7 @@ class App(tk.Tk):
         self.conn = tk.StringVar(value=self.settings.get("port", "COM10"))
         self.status = tk.StringVar(value="未連線")
         self.feature_rows = []
+        self.scan_faulty = []   # [(address, name, number of codes)] from the last whole-car scan
         self._busy = False
         self._busy_buttons = []
         self.live_stop = threading.Event()
@@ -136,6 +139,7 @@ class App(tk.Tk):
         self._tab_health(nb)
         self._tab_faults(nb)
         self._tab_features(nb)
+        self._tab_service(nb)
 
         self.log = tk.Text(self, height=6, wrap="word", state="disabled", bg="#111", fg="#9f9")
         self.log.pack(fill="both", expand=False, padx=8, pady=(0, 8))
@@ -198,7 +202,9 @@ class App(tk.Tk):
                      lambda: self.simple_cmd(("autoscan",), target="fault")).pack(side="left")
         self._button(bar, "只看引擎故障碼",
                      lambda: self.simple_cmd(("obd",), target="fault")).pack(side="left", padx=6)
-        ttk.Label(f, text="清除故障碼請用指令列 clear-dtc (會先備份、清後驗證)。", style="Cap.TLabel").pack(anchor="w", pady=(4, 0))
+        self._button(bar, "清除全部故障碼", self.clear_all).pack(side="left")
+        ttk.Label(f, text="清除前要先做一次全車掃描。會列出要清的模組讓你確認；每個模組先備份、只送一次、清完讀回。"
+                          "故障還在的話會馬上再出現。", style="Cap.TLabel", wraplength=660).pack(anchor="w", pady=(4, 0))
         self.fault_out = self._text_box(f, 16)
 
     def _tab_features(self, nb):
@@ -218,6 +224,18 @@ class App(tk.Tk):
         canvas.configure(yscrollcommand=sb.set)
         canvas.pack(side="left", fill="both", expand=True, pady=6)
         sb.pack(side="right", fill="y")
+
+    def _tab_service(self, nb):
+        f = ttk.Frame(nb, padding=6)
+        nb.add(f, text="保養")
+        bar = ttk.Frame(f); bar.pack(fill="x")
+        self._button(bar, "讀取里程", self.read_odometer).pack(side="left")
+        ttk.Button(bar, text="記錄換機油", command=self.record_oil_change).pack(side="left", padx=6)
+        ttk.Label(f, text="換機油提醒只記在這台電腦，不會寫入車子；儀表板自己的保養提醒不受影響。全車掃描時也會順便更新里程。",
+                  style="Cap.TLabel", wraplength=660).pack(anchor="w", pady=(4, 8))
+        self.service_text = ttk.Label(f, text="", font=("Microsoft JhengHei UI", 12), justify="left", wraplength=660)
+        self.service_text.pack(anchor="w", padx=4)
+        self._show_service(service.view(service.load(SERVICE_FILE)))
 
     # ---- helpers ----
     def port(self):
@@ -307,8 +325,115 @@ class App(tk.Tk):
             text = f"失敗：{error_text(doc)}"
         elif not ok:
             text += f"\n\n失敗：{error_text(doc)}"
+        if data and isinstance(doc, dict) and doc.get("command") == "autoscan":
+            text = (text + "\n" + self._after_scan(data)).strip()
         self._write_box(box, text or json.dumps(data, ensure_ascii=False, indent=2))
         self._log("完成。" if ok else f"失敗：{error_text(doc)}")
+
+    # ---- clearing fault codes (after a whole-car scan) ----
+    def _after_scan(self, data):
+        """Remember which modules have fault codes; the scan also read the odometer."""
+        self.scan_faulty = [(r["address"], r["name"], len(r["dtcs"])) for r in data["modules"] if r.get("dtcs")]
+        km = service.odometer_in([v for r in data["modules"] for v in r.get("values", [])])
+        if km is None:
+            return ""
+        state = service.set_odometer(service.load(SERVICE_FILE), km)
+        service.save(SERVICE_FILE, state)
+        return self._show_service(service.view(state))
+
+    def clear_all(self):
+        if not self.scan_faulty:
+            self._log("沒有要清除的故障碼。先按「全車掃描」；掃描結果有故障碼才能清除。")
+            return
+        lines = "\n".join(f"· {a} {name}：{n} 個" for a, name, n in self.scan_faulty)
+        extra = ""
+        if any(a == "01" for a, _, _ in self.scan_faulty):
+            extra = "\n\n注意：清除引擎故障碼會把排放自我檢測歸零，要再正常行駛一段時間才會完成；近期要驗車先不要清引擎。"
+        if not messagebox.askyesno("確認清除故障碼", "要清除以下模組的故障碼嗎？\n(每個模組先備份、只送一次、清完讀回；"
+                                   f"故障還在的話會馬上再出現)\n\n{lines}{extra}"):
+            self._log("已取消。")
+            return
+        self._log(f"開始清除 {len(self.scan_faulty)} 個模組的故障碼…")
+        port, targets = self.port(), list(self.scan_faulty)
+        self.scan_faulty = []   # one approval, one attempt: scan again before clearing again
+        self._async(lambda: self._clear_modules(port, targets), self._cleared)
+
+    @staticmethod
+    def _clear_modules(port, targets):
+        """Worker thread. Each module is sent once; a failure does not stop the rest."""
+        words = {"cleared": "已清除，讀回 0 個", "nothing": "本來就沒有故障碼"}
+        msgs = []
+        for address, name, _ in targets:
+            ok, data, doc, _ = run_json(port, "--yes", "clear-dtc", address)
+            status = (data or {}).get("status")
+            if ok and status == "partly":
+                msgs.append(f"△ {address} {name}：已送出，還剩 {len((data or {}).get('after') or [])} 個 (故障仍存在)")
+            elif ok:
+                msgs.append(f"✓ {address} {name}：{words.get(status, status or '完成')}")
+            else:
+                msgs.append(f"✗ {address} {name}：{error_text(doc)}")
+        return "\n".join(msgs) + "\n\n請再按一次「全車掃描」確認哪些故障還在。"
+
+    def _cleared(self, text):
+        self._write_box(self.fault_out, text)
+        self._log("清除故障碼完成，結果在「故障碼」分頁。")
+
+    # ---- oil change reminder (kept on this PC, nothing is written to the car) ----
+    def read_odometer(self):
+        self._log("讀取里程…")
+        port = self.port()
+        self._async(lambda: run_json(port, "values"), self._odometer_read)
+
+    def _odometer_read(self, result):
+        ok, data, doc, _ = result
+        km = service.odometer_in((data or {}).get("values") or [])
+        if km is None:
+            self._log(f"讀不到里程：{error_text(doc)}")
+            return
+        state = service.set_odometer(service.load(SERVICE_FILE), km)
+        service.save(SERVICE_FILE, state)
+        self._show_service(service.view(state))
+        self._log(f"目前里程 {int(km):,} km。")
+
+    def _show_service(self, doc):
+        """Update the 保養 tab; returns the one-line summary (also shown after a scan)."""
+        self.service_text.configure(text=doc["message"], foreground=LEVEL_COLORS.get(doc["level"], ""))
+        return service.summary_line(doc)
+
+    def record_oil_change(self):
+        state = service.load(SERVICE_FILE)
+        win = tk.Toplevel(self)
+        win.title("記錄換機油")
+        win.transient(self)
+        win.resizable(False, False)
+        body = ttk.Frame(win, padding=14)
+        body.pack(fill="both", expand=True)
+        ttk.Label(body, text="換機油時的里程 (km)，可以改成之前換的里程：").pack(anchor="w")
+        km = tk.StringVar(value=str(state.get("odometer") or ""))
+        entry = ttk.Entry(body, textvariable=km, width=14)
+        entry.pack(anchor="w", pady=(2, 10))
+        ttk.Label(body, text="下一次多久後換：").pack(anchor="w")
+        interval = tk.IntVar(value=(state.get("oil") or {}).get("interval", 7500))
+        for v in service.INTERVALS:
+            ttk.Radiobutton(body, text=f"{v:,} km 後", variable=interval, value=v).pack(anchor="w")
+
+        def record():
+            try:
+                new = service.record_oil(service.load(SERVICE_FILE), km.get().replace(",", "").strip(), interval.get())
+            except ValueError as e:
+                messagebox.showwarning("記錄換機油", str(e), parent=win)
+                return
+            service.save(SERVICE_FILE, new)
+            self._show_service(service.view(new))
+            self._log("已記錄換機油 (只存在這台電腦，沒有寫入車子)。")
+            win.destroy()
+
+        bar = ttk.Frame(body)
+        bar.pack(fill="x", pady=(12, 0))
+        ttk.Button(bar, text="記錄", command=record).pack(side="right")
+        ttk.Button(bar, text="取消", command=win.destroy).pack(side="right", padx=6)
+        entry.focus_set()
+        win.grab_set()
 
     # ---- live dashboard (engine OBD only) ----
     def live_running(self):

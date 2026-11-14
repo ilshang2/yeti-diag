@@ -33,7 +33,7 @@ Claude Code 預設每次呼叫 MCP 工具都會問人；**不要把 `apply` 設�
   "ok": true,
   "command": "autoscan",
   "tool": "yeti_diag",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "time": "2026-11-03T18:00:00",
   "vin": "TMBJF65L0E6000000",
   "sim": false,

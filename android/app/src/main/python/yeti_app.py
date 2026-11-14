@@ -323,111 +323,54 @@ def _apply_one(link, plan_id, sink):
     return _dump({"ok": True, "message": text})
 
 
-# --- oil change reminder: kept on the phone, nothing is written to the car -------------------
-# (Writing the interval into the instrument cluster needs its Security Access, which this
-# project does not implement; see 交接說明 2026-11-06.)
-SERVICE_INTERVALS = (5000, 7500, 10000)
-SERVICE_SOON_KM = 500
-
-
+# --- oil change reminder: kept on the phone, nothing is written to the car (yeti_diag.service) ---
 def _service_file():
     return HOME / "service.json"
 
 
-def _service_load():
-    try:
-        return json.loads(_service_file().read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return {}
-
-
-def _service_save(state):
-    HOME.mkdir(parents=True, exist_ok=True)
-    _service_file().write_text(_dump(state), encoding="utf-8")
-
-
-def _service_view(state):
-    """What the page shows: the saved oil change, the last odometer read and the distance left."""
-    oil, odometer = state.get("oil"), state.get("odometer")
-    doc = {"ok": True, "odometer": odometer, "oil": oil, "level": "none", "intervals": list(SERVICE_INTERVALS)}
-    lines = []
-    if odometer is not None:
-        lines.append(f"目前里程：{odometer:,} km (讀取於 {state.get('odometer_date', '?')}；儀表模組以 10 km 為單位回報)")
-    else:
-        lines.append("還沒讀過里程。連線後按「讀取里程」。")
-    if not oil:
-        lines.append("還沒有換機油的記錄。換完機油後按「記錄換機油」。")
-    else:
-        due = oil["odometer"] + oil["interval"]
-        lines += ["", f"上次換機油：{oil['odometer']:,} km (記錄於 {oil['date']})",
-                  f"間隔：{oil['interval']:,} km", f"下次換機油：{due:,} km"]
-        if odometer is not None:
-            left = due - odometer
-            doc["left"] = left
-            if left < 0:
-                doc["level"] = "over"
-                lines.append(f"已經超過 {-left:,} km，該換機油了。")
-            else:
-                doc["level"] = "soon" if left <= SERVICE_SOON_KM else "fine"
-                lines.append(f"還有 {left:,} km" + ("，快到了。" if doc["level"] == "soon" else "。"))
-    doc["message"] = "\n".join(lines)
-    return _dump(doc)
-
-
 def _service_from_scan(modules):
     """The full scan reads the odometer anyway: keep it and return a line about the oil change."""
-    import datetime
+    from yeti_diag import service
 
-    km = next((v.get("value") for r in modules for v in r.get("values", [])
-               if v.get("name") == "總里程" and "error" not in v), None)
+    km = service.odometer_in([v for r in modules for v in r.get("values", [])])
     if km is None:
         return ""
-    state = _service_load()
-    state["odometer"] = int(km)
-    state["odometer_date"] = datetime.date.today().isoformat()
-    _service_save(state)
-    view = json.loads(_service_view(state))
-    if "left" not in view:
-        return ""
-    left = view["left"]
-    return f"\n換機油：已超過 {-left:,} km" if left < 0 else f"\n換機油：還有 {left:,} km"
+    state = service.set_odometer(service.load(_service_file()), km)
+    service.save(_service_file(), state)
+    line = service.summary_line(service.view(state))
+    return "\n" + line if line else ""
 
 
 def service_status():
     """Saved state only; does not talk to the car."""
-    return _service_view(_service_load())
+    from yeti_diag import service
+
+    return _dump(service.view(service.load(_service_file())))
 
 
 def service_read(link, sink):
     """Read the odometer from the instrument cluster and show the distance left."""
-    import datetime
+    from yeti_diag import service
 
     doc = _json(link, ["values"], sink)
-    rows = (doc.get("data") or {}).get("values") or []
-    km = next((r.get("value") for r in rows if r.get("name") == "總里程" and "error" not in r), None)
+    km = service.odometer_in((doc.get("data") or {}).get("values") or [])
     if km is None:
         return _dump({"ok": False, "message": "讀不到里程。" + _error(doc)})
-    state = _service_load()
-    state["odometer"] = int(km)
-    state["odometer_date"] = datetime.date.today().isoformat()
-    _service_save(state)
-    return _service_view(state)
+    state = service.set_odometer(service.load(_service_file()), km)
+    service.save(_service_file(), state)
+    return _dump(service.view(state))
 
 
 def service_done(odometer, interval):
     """Record an oil change at `odometer` km with the chosen interval. Phone only."""
-    import datetime
+    from yeti_diag import service
 
     try:
-        odometer, interval = int(odometer), int(interval)
-    except (TypeError, ValueError):
-        return _dump({"ok": False, "message": "里程要填數字。"})
-    if not 0 < odometer < 2_000_000 or interval not in SERVICE_INTERVALS:
-        return _dump({"ok": False, "message": "里程或間隔不對。"})
-    state = _service_load()
-    state["oil"] = {"odometer": odometer, "interval": interval, "date": datetime.date.today().isoformat()}
-    _service_save(state)
-    return _service_view(state)
+        state = service.record_oil(service.load(_service_file()), odometer, interval)
+    except ValueError as e:
+        return _dump({"ok": False, "message": str(e)})
+    service.save(_service_file(), state)
+    return _dump(service.view(state))
 
 
 def data_dir():

@@ -75,8 +75,9 @@ Pick the adapter's COM port → "連線 / 讀電壓" (connect / read voltage). T
 
 - **即時儀表 (live dashboard):** speed, rpm, coolant, voltage, intake and outside temperature. Engine only, safe while driving, can log to a file.
 - **健康檢查 (health):** misfire per cylinder, battery voltage, readiness, engine OBD.
-- **故障碼 (fault codes):** whole-car scan (car parked, 1–2 minutes).
+- **故障碼 (fault codes):** whole-car scan (car parked, 1–2 minutes). After a scan, 清除全部故障碼 (clear all fault codes) lists the modules to clear and asks first; each module is backed up, sent once and read back (experimental).
 - **隱藏功能 (hidden features):** read 09's switches → tick → confirm old/new values → write (experimental). The first time it spends about a minute finding module addresses.
+- **保養 (service):** oil change reminder (5000 / 7500 / 10000 km). Kept on this PC only, **nothing is written to the car**; a whole-car scan also updates the odometer.
 
 ## Android app
 

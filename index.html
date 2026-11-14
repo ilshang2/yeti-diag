@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>yeti_diag — Skoda Yeti 藍牙 OBD 診斷工具</title>
-<meta name="description" content="用一般藍牙 ELM327 接頭診斷 Skoda Yeti (VW PQ35)：全車掃描、故障碼、失火、即時儀表、隱藏功能。">
+<meta name="description" content="用一般藍牙 ELM327 接頭診斷 Skoda Yeti (VW PQ35)：Windows 與 Android 手機 App，全車掃描、清除故障碼、失火、即時儀表、隱藏功能、換機油提醒。">
 <style>
   :root { --bg:#f4f6f5; --panel:#fff; --ink:#18211f; --muted:#5b6a66; --line:#d3dbd8; --accent:#0b7a5f; --warn:#8a5200; --warn-bg:#fff6e5; }
   @media (prefers-color-scheme: dark) {
@@ -45,10 +45,11 @@
 
   <div lang="zh-Hant">
     <h1>yeti_diag</h1>
-    <p class="sub">用一般的藍牙 ELM327 接頭診斷 Skoda Yeti (VW PQ35 平台)：全車掃描、故障碼、各缸失火、排放自檢、即時儀表、09 隱藏功能。</p>
+    <p class="sub">用一般的藍牙 ELM327 接頭診斷 Skoda Yeti (VW PQ35 平台)：全車掃描、讀取與清除故障碼、各缸失火、排放自檢、即時儀表、09 隱藏功能、換機油提醒。有 Windows 版與 Android 手機 App。</p>
 
     <div class="cards">
-      <div class="card"><h3>點兩下就用</h3><p>Windows 圖形介面，免安裝 Python。</p><a class="btn" href="https://github.com/ilshang2/yeti-diag/releases/latest">下載 YetiDiag.exe</a></div>
+      <div class="card"><h3>Windows 電腦</h3><p>圖形介面，免安裝 Python，點兩下就用。</p><a class="btn" href="https://github.com/ilshang2/yeti-diag/releases/latest">下載 YetiDiag.exe</a></div>
+      <div class="card"><h3>Android 手機</h3><p>手機直接用藍牙連接頭，不需要電腦。Android 7 以上。</p><a class="btn" href="https://github.com/ilshang2/yeti-diag/releases/latest">下載 APK</a></div>
       <div class="card"><h3>交給 AI 助手</h3><p>在 Claude Code、Codex、Gemini CLI 貼上提示詞，AI 幫你安裝、連車、用白話解釋。</p><a class="btn" href="https://github.com/ilshang2/yeti-diag/blob/main/PROMPT.md">看 PROMPT.md</a></div>
       <div class="card"><h3>原始碼 / 指令列</h3><p>Python 程式、模擬器、測試與完整說明。</p><a class="btn" href="https://github.com/ilshang2/yeti-diag">GitHub</a></div>
     </div>
@@ -58,18 +59,22 @@
       <li>全車掃描：新舊模組的零件號碼、編碼、故障碼 (含說明，與 VCDS 對照過)</li>
       <li>引擎即時數據、各缸失火次數、排放自我檢測</li>
       <li>即時儀表：只讀引擎，開車時也可以看、可以存檔</li>
-      <li>09 中央電子隱藏功能讀取與開關 (寫入為實驗功能)</li>
+      <li>09 中央電子隱藏功能讀取與開關 (寫入為實驗功能)：先顯示新舊值，你同意才送出，只送一次</li>
+      <li>清除故障碼：單一模組或全部模組，清除前備份、清完讀回 (實驗功能)</li>
+      <li>電瓶檢查、啟動壓降測試 (手機 App)</li>
+      <li>換機油提醒：5000 / 7500 / 10000 km，只記在手機或電腦裡，不寫入車子</li>
       <li>每個指令都能輸出 JSON，也有 MCP 伺服器，方便 AI 操作</li>
     </ul>
 
     <h2>畫面</h2>
     <div class="shots"><figure><a href="docs/1_live.png"><img src="docs/1_live.png" alt="即時儀表 (行駛中可用)" loading="lazy" width="760" height="680"></a><figcaption>即時儀表 (行駛中可用)</figcaption></figure><figure><a href="docs/2_health.png"><img src="docs/2_health.png" alt="各缸失火" loading="lazy" width="760" height="680"></a><figcaption>各缸失火</figcaption></figure><figure><a href="docs/3_scan.png"><img src="docs/3_scan.png" alt="全車掃描：新舊模組故障碼" loading="lazy" width="760" height="680"></a><figcaption>全車掃描：新舊模組故障碼</figcaption></figure><figure><a href="docs/4_features.png"><img src="docs/4_features.png" alt="09 隱藏功能" loading="lazy" width="760" height="680"></a><figcaption>09 隱藏功能</figcaption></figure></div>
-    <p class="note">截圖是內建模擬器的資料，實車畫面相同。</p>
+    <p class="note">截圖是 Windows 版在內建模擬器上的畫面，實車畫面相同。手機 App 的分頁：故障碼、即時、電瓶、功能、保養、進階。</p>
 
     <h2>使用前請看</h2>
     <div class="warn">
       <strong>使用風險自負。</strong>寫入可能讓功能失效或產生故障碼；只在作者的一台 Skoda Yeti 1.2 TSI 2014 上驗證過。
       行駛中只能看即時儀表：車速超過 3 km/h 時程式會拒絕連 ABS 等模組與任何寫入。
+      手機 App 沒有上架商店，安裝時要允許「安裝未知來源的應用程式」。
       與 Volkswagen、Škoda、Ross-Tech 無關。不提供改里程、防盜破解。
     </div>
 
@@ -79,10 +84,11 @@
 
   <div lang="en">
     <h1>yeti_diag</h1>
-    <p class="sub">Diagnose a Skoda Yeti (VW PQ35) with a cheap Bluetooth ELM327 adapter: whole-car scan, fault codes, misfire counters, readiness, live dashboard, 09 hidden features.</p>
+    <p class="sub">Diagnose a Skoda Yeti (VW PQ35) with a cheap Bluetooth ELM327 adapter: whole-car scan, reading and clearing fault codes, misfire counters, readiness, live dashboard, 09 hidden features, oil change reminder. For Windows and as an Android app.</p>
 
     <div class="cards">
-      <div class="card"><h3>Double-click</h3><p>Windows GUI, no Python needed.</p><a class="btn" href="https://github.com/ilshang2/yeti-diag/releases/latest">Download YetiDiag.exe</a></div>
+      <div class="card"><h3>Windows PC</h3><p>GUI, no Python needed, just double-click.</p><a class="btn" href="https://github.com/ilshang2/yeti-diag/releases/latest">Download YetiDiag.exe</a></div>
+      <div class="card"><h3>Android phone</h3><p>The phone talks to the adapter over Bluetooth, no PC needed. Android 7 or later; the interface is in Chinese.</p><a class="btn" href="https://github.com/ilshang2/yeti-diag/releases/latest">Download the APK</a></div>
       <div class="card"><h3>Let an AI do it</h3><p>Paste the prompt into Claude Code, Codex or Gemini CLI: it installs, connects and explains in plain words.</p><a class="btn" href="https://github.com/ilshang2/yeti-diag/blob/main/PROMPT.md">Open PROMPT.md</a></div>
       <div class="card"><h3>Source / CLI</h3><p>Python tool, simulator, tests and full docs.</p><a class="btn" href="https://github.com/ilshang2/yeti-diag/blob/main/README_en.md">GitHub</a></div>
     </div>
@@ -92,18 +98,22 @@
       <li>Whole-car scan: part numbers, coding and decoded fault codes of new and old modules (checked against VCDS)</li>
       <li>Engine live data, misfire counters per cylinder, emission readiness</li>
       <li>Live dashboard: engine only, safe to watch while driving, can log to a file</li>
-      <li>Read and switch 09 hidden features (writing is experimental)</li>
+      <li>Read and switch 09 hidden features (writing is experimental): old and new values are shown first, sent once after you agree</li>
+      <li>Clear fault codes of one module or all of them, with a backup before and a read-back after (experimental)</li>
+      <li>Battery check and cranking voltage test (Android app)</li>
+      <li>Oil change reminder: 5000 / 7500 / 10000 km, kept on the phone or PC, nothing is written to the car</li>
       <li>JSON output for every command and an MCP server for AI agents</li>
     </ul>
 
     <h2>Screenshots</h2>
     <div class="shots"><figure><a href="docs/1_live.png"><img src="docs/1_live.png" alt="Live dashboard (safe while driving)" loading="lazy" width="760" height="680"></a><figcaption>Live dashboard (safe while driving)</figcaption></figure><figure><a href="docs/2_health.png"><img src="docs/2_health.png" alt="Misfire per cylinder" loading="lazy" width="760" height="680"></a><figcaption>Misfire per cylinder</figcaption></figure><figure><a href="docs/3_scan.png"><img src="docs/3_scan.png" alt="Whole-car scan" loading="lazy" width="760" height="680"></a><figcaption>Whole-car scan</figcaption></figure><figure><a href="docs/4_features.png"><img src="docs/4_features.png" alt="09 hidden features" loading="lazy" width="760" height="680"></a><figcaption>09 hidden features</figcaption></figure></div>
-    <p class="note">Taken on the built-in simulator; the program's labels are in Chinese.</p>
+    <p class="note">Windows version on the built-in simulator; the program's labels are in Chinese. The Android app has the tabs fault codes, live, battery, features, service and advanced.</p>
 
     <h2>Before you start</h2>
     <div class="warn">
       <strong>Use at your own risk.</strong> Writes can disable functions or set fault codes; verified on one Skoda Yeti 1.2 TSI 2014 only.
       While driving, use only the live dashboard: above 3 km/h the tool refuses ABS and other modules and every write.
+      The Android app is not in an app store: allow installing from unknown sources.
       Not affiliated with Volkswagen, Škoda or Ross-Tech. No odometer or immobilizer features.
     </div>
 
